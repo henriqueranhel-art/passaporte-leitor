@@ -1,0 +1,159 @@
+import prisma from '../lib/prisma.js';
+import { Genre } from '@prisma/client';
+
+interface AchievementRequirement {
+  type: string;
+  value: number;
+  genre?: string;
+}
+
+/**
+ * Verifica e atribui conquistas para uma criança
+ * Retorna as novas conquistas atribuídas
+ */
+export async function checkAndAwardAchievements(childId: string) {
+  // Obter todos os livros da criança
+  const books = await prisma.book.findMany({
+    where: { childId },
+  });
+
+  // Obter conquistas já obtidas
+  const existingAchievements = await prisma.childAchievement.findMany({
+    where: { childId },
+    select: { achievementId: true },
+  });
+  const existingIds = new Set(existingAchievements.map((a) => a.achievementId));
+
+  // Obter todas as conquistas disponíveis
+  const allAchievements = await prisma.achievement.findMany();
+
+  // Verificar quais conquistas foram desbloqueadas
+  const newAchievements = [];
+
+  for (const achievement of allAchievements) {
+    // Saltar se já foi obtida
+    if (existingIds.has(achievement.id)) continue;
+
+    const requirements = achievement.requirements as unknown as AchievementRequirement;
+    let earned = false;
+
+    switch (requirements.type) {
+      case 'book_count':
+        earned = books.length >= requirements.value;
+        break;
+
+      case 'genre_count':
+        const uniqueGenres = new Set(books.map((b) => b.genre));
+        earned = uniqueGenres.size >= requirements.value;
+        break;
+
+      case 'genre_books':
+        const genreBooks = books.filter((b) => b.genre === requirements.genre);
+        earned = genreBooks.length >= requirements.value;
+        break;
+
+      case 'rated_books':
+        const ratedBooks = books.filter((b) => b.rating !== null);
+        earned = ratedBooks.length >= requirements.value;
+        break;
+
+      case 'monthly_books':
+        const now = new Date();
+        const thisMonthBooks = books.filter((b) => {
+          const d = new Date(b.dateRead);
+          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        });
+        earned = thisMonthBooks.length >= requirements.value;
+        break;
+    }
+
+    if (earned) {
+      await prisma.childAchievement.create({
+        data: {
+          childId,
+          achievementId: achievement.id,
+        },
+      });
+
+      newAchievements.push({
+        id: achievement.id,
+        code: achievement.code,
+        name: achievement.name,
+        description: achievement.description,
+        icon: achievement.icon,
+      });
+    }
+  }
+
+  return newAchievements;
+}
+
+/**
+ * Calcula o nível baseado no número de livros
+ */
+export function calculateLevel(bookCount: number) {
+  const levels = [
+    { name: 'Grumete', minBooks: 0, icon: '🐣', color: '#BDC3C7' },
+    { name: 'Marinheiro', minBooks: 5, icon: '⚓', color: '#85C1E9' },
+    { name: 'Explorador', minBooks: 10, icon: '🧭', color: '#82E0AA' },
+    { name: 'Capitão', minBooks: 20, icon: '🎖️', color: '#F9E79F' },
+    { name: 'Almirante', minBooks: 35, icon: '👑', color: '#F5B041' },
+    { name: 'Lenda', minBooks: 50, icon: '⭐', color: '#AF7AC5' },
+  ];
+
+  for (let i = levels.length - 1; i >= 0; i--) {
+    if (bookCount >= levels[i].minBooks) {
+      const currentLevel = levels[i];
+      const nextLevel = levels[i + 1] || null;
+
+      return {
+        current: currentLevel,
+        next: nextLevel,
+        progress: nextLevel
+          ? ((bookCount - currentLevel.minBooks) / (nextLevel.minBooks - currentLevel.minBooks)) * 100
+          : 100,
+        booksToNextLevel: nextLevel ? nextLevel.minBooks - bookCount : 0,
+      };
+    }
+  }
+
+  return {
+    current: levels[0],
+    next: levels[1],
+    progress: 0,
+    booksToNextLevel: levels[1].minBooks,
+  };
+}
+
+/**
+ * Obtém estatísticas de géneros para uma criança
+ */
+export async function getGenreStats(childId: string) {
+  const books = await prisma.book.findMany({
+    where: { childId },
+    select: { genre: true },
+  });
+
+  const genreCount: Record<string, number> = {};
+  for (const book of books) {
+    genreCount[book.genre] = (genreCount[book.genre] || 0) + 1;
+  }
+
+  const genreInfo: Record<string, { name: string; icon: string; theme: string; color: string }> = {
+    FANTASIA: { name: 'Fantasia', icon: '🏰', theme: 'Reino Mágico', color: '#9B59B6' },
+    AVENTURA: { name: 'Aventura', icon: '🗺️', theme: 'Terras Selvagens', color: '#E67E22' },
+    ESPACO: { name: 'Espaço', icon: '🚀', theme: 'Galáxia Infinita', color: '#2C3E50' },
+    NATUREZA: { name: 'Natureza', icon: '🌲', theme: 'Floresta Encantada', color: '#27AE60' },
+    MISTERIO: { name: 'Mistério', icon: '🔍', theme: 'Vale das Sombras', color: '#34495E' },
+    OCEANO: { name: 'Oceano', icon: '🌊', theme: 'Mar dos Piratas', color: '#3498DB' },
+    CIENCIA: { name: 'Ciência', icon: '🔬', theme: 'Laboratório Secreto', color: '#1ABC9C' },
+    HISTORIA: { name: 'História', icon: '📜', theme: 'Ruínas Antigas', color: '#795548' },
+  };
+
+  return Object.entries(genreInfo).map(([key, info]) => ({
+    genre: key,
+    ...info,
+    count: genreCount[key] || 0,
+    discovered: (genreCount[key] || 0) > 0,
+  }));
+}

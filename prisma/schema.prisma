@@ -1,0 +1,150 @@
+// Passaporte do Leitor - Database Schema
+// Using Neon PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+// MODELOS PRINCIPAIS
+// ============================================================================
+
+model Family {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  password  String?  // Hashed, opcional para MVP
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  children Child[]
+  settings FamilySettings?
+
+  @@map("families")
+}
+
+model FamilySettings {
+  id       String @id @default(cuid())
+  familyId String @unique
+  family   Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  // Preferências
+  language       String  @default("pt-PT")
+  theme          String  @default("explorer")
+  notifications  Boolean @default(true)
+  weeklyReport   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("family_settings")
+}
+
+model Child {
+  id        String   @id @default(cuid())
+  familyId  String
+  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  
+  name      String
+  avatar    String   @default("🧒")
+  birthYear Int?     // Opcional, para recomendações
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  books        Book[]
+  achievements ChildAchievement[]
+
+  @@map("children")
+}
+
+model Book {
+  id       String @id @default(cuid())
+  childId  String
+  child    Child  @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  // Informação do livro
+  title    String
+  author   String
+  isbn     String?
+  genre    Genre
+  
+  // Avaliação
+  rating   Int?    // 1-3 (😐, 🙂, 😍)
+  notes    String? // Notas opcionais
+  
+  // Datas
+  dateRead  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([childId])
+  @@index([genre])
+  @@index([dateRead])
+  @@map("books")
+}
+
+model Achievement {
+  id          String @id @default(cuid())
+  code        String @unique // ex: "primeiro-livro", "cinco-livros"
+  name        String
+  description String
+  icon        String
+  category    AchievementCategory @default(READING)
+  
+  // Requisitos (JSON para flexibilidade)
+  // ex: { "type": "book_count", "value": 5 }
+  // ex: { "type": "genre_count", "value": 3 }
+  requirements Json
+
+  children ChildAchievement[]
+
+  @@map("achievements")
+}
+
+model ChildAchievement {
+  id            String   @id @default(cuid())
+  childId       String
+  child         Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  earnedAt      DateTime @default(now())
+
+  @@unique([childId, achievementId])
+  @@map("child_achievements")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum Genre {
+  FANTASIA   // 🏰 Reino Mágico
+  AVENTURA   // 🗺️ Terras Selvagens
+  ESPACO     // 🚀 Galáxia Infinita
+  NATUREZA   // 🌲 Floresta Encantada
+  MISTERIO   // 🔍 Vale das Sombras
+  OCEANO     // 🌊 Mar dos Piratas
+  CIENCIA    // 🔬 Laboratório Secreto
+  HISTORIA   // 📜 Ruínas Antigas
+}
+
+enum AchievementCategory {
+  READING    // Relacionado com quantidade de leitura
+  GENRE      // Relacionado com géneros
+  STREAK     // Relacionado com consistência
+  SPECIAL    // Conquistas especiais
+}
+
+// ============================================================================
+// ÍNDICES ADICIONAIS PARA PERFORMANCE
+// ============================================================================
+
+// Os índices principais já estão definidos acima com @@index

@@ -1,0 +1,35 @@
+{
+  "name": "passaporte-leitor",
+  "version": "1.0.0",
+  "description": "Passaporte do Leitor - App de leitura gamificada para crianças",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "build": "npm run build --workspace=backend && npm run build --workspace=frontend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "type-check": "npm run typecheck --workspace=backend && npm run typecheck --workspace=frontend",
+    "start": "npm run start --workspace=backend",
+    "db:generate": "npx prisma generate --schema=./prisma/schema.prisma",
+    "db:push": "npx prisma db push --schema=./prisma/schema.prisma",
+    "db:migrate": "npx prisma migrate dev --schema=./prisma/schema.prisma",
+    "db:studio": "npx prisma studio --schema=./prisma/schema.prisma"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.1",
+    "concurrently": "^8.2.2",
+    "prisma": "^5.10.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
