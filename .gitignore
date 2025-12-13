@@ -34,8 +34,8 @@ coverage/
 .idea/
 
 # Prisma
-/prisma/*.db
-/prisma/migrations/*/migration_lock.toml
+/backend/prisma/*.db
+/backend/prisma/migrations/*/migration_lock.toml
 
 # Tooling
 .turbo

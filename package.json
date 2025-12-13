@@ -16,10 +16,10 @@
     "build:backend": "npm run build --workspace=backend",
     "type-check": "npm run typecheck --workspace=backend && npm run typecheck --workspace=frontend",
     "start": "npm run start --workspace=backend",
-    "db:generate": "npx prisma generate --schema=./prisma/schema.prisma",
-    "db:push": "npx prisma db push --schema=./prisma/schema.prisma",
-    "db:migrate": "npx prisma migrate dev --schema=./prisma/schema.prisma",
-    "db:studio": "npx prisma studio --schema=./prisma/schema.prisma"
+    "db:generate": "npm run db:generate --workspace=backend",
+    "db:push": "npm run db:push --workspace=backend",
+    "db:migrate": "npm run db:migrate --workspace=backend",
+    "db:studio": "npm run db:studio --workspace=backend"
   },
   "devDependencies": {
     "@types/node": "^25.0.1",
