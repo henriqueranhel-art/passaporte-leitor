@@ -5,7 +5,7 @@ import { useStore, useIsOnboardingComplete, useFamilyId, useShowConfetti } from 
 import { familyApi, childrenApi } from './lib/api';
 
 // Pages
-import Onboarding from './pages/Onboarding';
+import AuthPage from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import MapPage from './pages/Map';
 import BooksPage from './pages/Books';
@@ -23,7 +23,6 @@ export default function App() {
   const showConfetti = useShowConfetti();
   const { setFamily, setChildren } = useStore();
 
-  // Fetch family data if we have an ID
   // Fetch family data if we have an ID
   const { data: familyData, isLoading: familyLoading } = useQuery({
     queryKey: ['family', familyId],
@@ -48,13 +47,15 @@ export default function App() {
 
   const isLoading = familyLoading || childrenLoading;
 
-  // Show onboarding if not complete
-  if (!isOnboardingComplete) {
+  // Check for auth token (legacy support)
+  const hasToken = !!localStorage.getItem('authToken');
+
+  // Show Auth if not logged in / onboarding not complete
+  if (!isOnboardingComplete || !hasToken) {
     return (
-      <>
-        <Onboarding />
-        <Confetti active={showConfetti} />
-      </>
+      <Routes>
+        <Route path="*" element={<AuthPage />} />
+      </Routes>
     );
   }
 

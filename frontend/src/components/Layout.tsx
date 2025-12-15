@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { clsx } from 'clsx';
-import { useFamily } from '../lib/store';
+import { useFamily, useStore } from '../lib/store';
 
 // ============================================================================
 // LAYOUT WITH SIDEBAR
@@ -58,7 +58,15 @@ export default function Layout() {
         {family && (
           <div className="p-4 rounded-xl bg-background mt-4">
             <p className="text-xs text-gray-500 mb-1">👨‍👩‍👧‍👦 Família</p>
-            <p className="font-bold text-sm text-gray-800">{family.name}</p>
+            <div className="flex justify-between items-center">
+              <p className="font-bold text-sm text-gray-800">{family.name}</p>
+              <button
+                onClick={() => useStore.getState().logout()}
+                className="text-xs text-red-400 hover:text-red-600 font-bold"
+              >
+                Sair
+              </button>
+            </div>
           </div>
         )}
 

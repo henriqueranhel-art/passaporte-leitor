@@ -21,12 +21,20 @@ class ApiError extends Error {
 }
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('authToken');
+
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options?.headers,
+  };
+
+  if (token) {
+    (headers as any)['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -38,26 +46,50 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 }
 
 // ============================================================================
+// AUTH API
+// ============================================================================
+
+export const authApi = {
+  checkEmail: (email: string) =>
+    request<{ exists: boolean }>('/auth/check-email', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  register: (data: any) =>
+    request<{ token: string; family: Family; firstChild: Child }>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  login: (email: string, password: string) =>
+    request<{ token: string; family: Family }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+};
+
+// ============================================================================
 // FAMILY API
 // ============================================================================
 
 export const familyApi = {
   get: (id: string) => request<Family>(`/family/${id}`),
-  
+
   getFull: (id: string) => request<Family>(`/family/${id}/full`),
-  
+
   create: (data: CreateFamilyInput) =>
     request<Family>('/family', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-    
+
   update: (id: string, data: Partial<CreateFamilyInput>) =>
     request<Family>(`/family/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-    
+
   delete: (id: string) =>
     request<{ success: boolean }>(`/family/${id}`, {
       method: 'DELETE',
@@ -70,21 +102,21 @@ export const familyApi = {
 
 export const childrenApi = {
   get: (id: string) => request<Child>(`/children/${id}`),
-  
+
   getByFamily: (familyId: string) => request<Child[]>(`/children/family/${familyId}`),
-  
+
   create: (data: CreateChildInput) =>
     request<Child>('/children', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-    
+
   update: (id: string, data: Partial<Omit<CreateChildInput, 'familyId'>>) =>
     request<Child>(`/children/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-    
+
   delete: (id: string) =>
     request<{ success: boolean }>(`/children/${id}`, {
       method: 'DELETE',
@@ -97,7 +129,7 @@ export const childrenApi = {
 
 export const booksApi = {
   get: (id: string) => request<Book>(`/books/${id}`),
-  
+
   getByChild: (childId: string, params?: { genre?: Genre; limit?: number; offset?: number }) => {
     const searchParams = new URLSearchParams();
     if (params?.genre) searchParams.set('genre', params.genre);
@@ -106,7 +138,7 @@ export const booksApi = {
     const query = searchParams.toString();
     return request<{ books: Book[]; total: number }>(`/books/child/${childId}${query ? `?${query}` : ''}`);
   },
-  
+
   getByFamily: (familyId: string, params?: { genre?: Genre; limit?: number; offset?: number }) => {
     const searchParams = new URLSearchParams();
     if (params?.genre) searchParams.set('genre', params.genre);
@@ -115,19 +147,19 @@ export const booksApi = {
     const query = searchParams.toString();
     return request<{ books: Book[]; total: number }>(`/books/family/${familyId}${query ? `?${query}` : ''}`);
   },
-  
+
   create: (data: CreateBookInput) =>
     request<{ book: Book; newAchievements: Achievement[] }>('/books', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-    
+
   update: (id: string, data: Partial<Omit<CreateBookInput, 'childId'>>) =>
     request<Book>(`/books/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-    
+
   delete: (id: string) =>
     request<{ success: boolean }>(`/books/${id}`, {
       method: 'DELETE',
@@ -140,14 +172,14 @@ export const booksApi = {
 
 export const achievementsApi = {
   getAll: () => request<Achievement[]>('/achievements'),
-  
+
   getByChild: (childId: string) =>
     request<{
       achievements: Achievement[];
       totalEarned: number;
       totalAvailable: number;
     }>(`/achievements/child/${childId}`),
-    
+
   check: (childId: string) =>
     request<{ newAchievements: Achievement[]; count: number }>(`/achievements/check/${childId}`, {
       method: 'POST',
@@ -160,9 +192,9 @@ export const achievementsApi = {
 
 export const statsApi = {
   getChildStats: (childId: string) => request<ChildStats>(`/stats/child/${childId}`),
-  
+
   getFamilyStats: (familyId: string) => request<FamilyStats>(`/stats/family/${familyId}`),
-  
+
   getLeaderboard: (familyId: string, period?: 'week' | 'month' | 'year' | 'all') => {
     const query = period ? `?period=${period}` : '';
     return request<{

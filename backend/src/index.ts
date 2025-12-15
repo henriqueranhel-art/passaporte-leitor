@@ -7,6 +7,7 @@ import { childRoutes } from './routes/children.js';
 import { bookRoutes } from './routes/books.js';
 import { achievementRoutes } from './routes/achievements.js';
 import { statsRoutes } from './routes/stats.js';
+import { authRoutes } from './routes/auth.js';
 
 const app = new Hono();
 
@@ -48,6 +49,7 @@ api.route('/children', childRoutes);
 api.route('/books', bookRoutes);
 api.route('/achievements', achievementRoutes);
 api.route('/stats', statsRoutes);
+api.route('/auth', authRoutes);
 
 app.route('/api', api);
 

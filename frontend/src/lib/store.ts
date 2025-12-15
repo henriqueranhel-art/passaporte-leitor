@@ -8,12 +8,12 @@ interface AppState {
   family: Family | null;
   children: Child[];
   selectedChildId: string | null;
-  
+
   // UI state
   isOnboardingComplete: boolean;
   showConfetti: boolean;
   recentAchievements: Achievement[];
-  
+
   // Actions
   setFamily: (family: Family) => void;
   setFamilyId: (id: string) => void;
@@ -27,6 +27,8 @@ interface AppState {
   addRecentAchievements: (achievements: Achievement[]) => void;
   clearRecentAchievements: () => void;
   reset: () => void;
+  setToken: (token: string) => void;
+  logout: () => void;
 }
 
 const initialState = {
@@ -43,11 +45,11 @@ export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
       ...initialState,
-      
+
       setFamily: (family) => set({ family, familyId: family.id }),
-      
+
       setFamilyId: (id) => set({ familyId: id }),
-      
+
       setChildren: (children) => {
         set({ children });
         // Auto-select first child if none selected
@@ -55,7 +57,7 @@ export const useStore = create<AppState>()(
           set({ selectedChildId: children[0].id });
         }
       },
-      
+
       addChild: (child) => {
         set((state) => ({ children: [...state.children, child] }));
         // Select new child if it's the first one
@@ -63,7 +65,7 @@ export const useStore = create<AppState>()(
           set({ selectedChildId: child.id });
         }
       },
-      
+
       updateChild: (id, data) => {
         set((state) => ({
           children: state.children.map((c) =>
@@ -71,32 +73,46 @@ export const useStore = create<AppState>()(
           ),
         }));
       },
-      
+
       removeChild: (id) => {
         set((state) => ({
           children: state.children.filter((c) => c.id !== id),
           selectedChildId: state.selectedChildId === id ? null : state.selectedChildId,
         }));
       },
-      
+
       setSelectedChild: (id) => set({ selectedChildId: id }),
-      
+
       completeOnboarding: () => set({ isOnboardingComplete: true }),
-      
+
       triggerConfetti: () => {
         set({ showConfetti: true });
         setTimeout(() => set({ showConfetti: false }), 3000);
       },
-      
+
       addRecentAchievements: (achievements) => {
         set((state) => ({
           recentAchievements: [...achievements, ...state.recentAchievements].slice(0, 5),
         }));
       },
-      
+
       clearRecentAchievements: () => set({ recentAchievements: [] }),
-      
-      reset: () => set(initialState),
+
+      reset: () => {
+        localStorage.removeItem('authToken');
+        set(initialState);
+      },
+
+      // Auth Actions
+      setToken: (token: string) => {
+        localStorage.setItem('authToken', token);
+        set({ isOnboardingComplete: true }); // If logged in, onboarding is done
+      },
+
+      logout: () => {
+        localStorage.removeItem('authToken');
+        set(initialState);
+      },
     }),
     {
       name: 'passaporte-leitor-storage',

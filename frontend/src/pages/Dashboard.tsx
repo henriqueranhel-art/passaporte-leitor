@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useStore, useChildren, useSelectedChild, useFamilyId } from '../lib/store';
 import { booksApi, statsApi, childrenApi } from '../lib/api';
-import { Button, Card, Modal, Input, ProgressBar, Badge } from '../components/ui';
+import { Button, Card, Modal, Input } from '../components/ui';
 import { GENRES, AVATARS, type Genre } from '../lib/types';
+import { ChildCard } from '../components/ChildCard';
 
 export default function Dashboard() {
   const familyId = useFamilyId();
@@ -70,124 +71,62 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {children.map((child) => {
             const stats = familyStats?.childStats.find((s) => s.id === child.id);
-            const isSelected = selectedChild?.id === child.id;
+            const childBooks = booksData?.books.filter(b => b.childId === child.id) || [];
+            const lastBook = childBooks.length > 0 ? childBooks[0] : null;
 
             return (
-              <Card
+              <ChildCard
                 key={child.id}
-                hover
-                onClick={() => setSelectedChild(child.id)}
-                className={isSelected ? 'ring-2 ring-primary shadow-lg' : ''}
-              >
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-inner"
-                    style={{ backgroundColor: stats?.level.current.color || '#BDC3C7' }}
-                  >
-                    {child.avatar}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg text-gray-800">{child.name}</h3>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge color="#E67E22">
-                        {stats?.level.current.icon} {stats?.level.current.name || 'Grumete'}
-                      </Badge>
-                      <span className="text-sm text-gray-500">
-                        {stats?.bookCount || 0} livros
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {stats?.level.next && (
-                  <div className="mt-4">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-500">Próximo: {stats.level.next.name}</span>
-                      <span className="text-primary">
-                        {stats.level.booksToNextLevel} livros
-                      </span>
-                    </div>
-                    <ProgressBar value={stats.level.progress} />
-                  </div>
-                )}
-              </Card>
+                child={{
+                  id: child.id,
+                  name: child.name,
+                  avatar: child.avatar,
+                  level: {
+                    name: stats?.level.current.name || 'Grumete',
+                    color: stats?.level.current.color || '#BDC3C7',
+                    icon: stats?.level.current.icon || '🐣',
+                    nextLevel: stats?.level.next?.name,
+                    booksToNextLevel: stats?.level.booksToNextLevel,
+                    progress: stats?.level.progress || 0,
+                  },
+                  booksCount: stats?.bookCount || 0,
+                  streak: 0, // Mocked
+                  todayReading: { minutes: 0, goal: 15 }, // Mocked
+                  weeklyActivity: [
+                    { day: 'Seg', status: 'neutral', label: '15' },
+                    { day: 'Ter', status: 'neutral', label: '16' },
+                    { day: 'Qua', status: 'neutral', label: '17' },
+                    { day: 'Qui', status: 'neutral', label: '18' },
+                    { day: 'Sex', status: 'neutral', label: '19' },
+                    { day: 'Sáb', status: 'neutral', label: '20' },
+                    { day: 'Dom', status: 'neutral', label: '21' },
+                  ], // Mocked
+                  currentBooks: [], // Mocked
+                  lastFinishedBook: lastBook ? {
+                    title: lastBook.title,
+                    author: lastBook.author,
+                    genre: lastBook.genre,
+                    rating: lastBook.rating || 0,
+                    finishedAt: lastBook.dateRead,
+                  } : null,
+                }}
+                onAddBook={() => {
+                  setSelectedChild(child.id);
+                  setShowAddBook(true);
+                }}
+                onLogReading={() => alert('Funcionalidade de registo de tempo em breve!')}
+                onViewDetails={() => setSelectedChild(child.id)}
+              />
             );
           })}
         </div>
       </div>
 
-      {/* Quick Action */}
-      {selectedChild && (
-        <Card
-          className="mb-8 border-primary"
-          style={{ backgroundColor: 'rgba(245, 166, 35, 0.1)' }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center text-3xl"
-                style={{ backgroundColor: '#F5A623' }}
-              >
-                {selectedChild.avatar}
-              </div>
-              <div>
-                <p className="font-bold text-lg text-gray-800">{selectedChild.name}</p>
-                <p className="text-sm text-gray-500">
-                  Selecionado para adicionar livros
-                </p>
-              </div>
-            </div>
-            <Button onClick={() => setShowAddBook(true)} size="lg">
-              📖 Adicionar Livro
-            </Button>
-          </div>
-        </Card>
-      )}
 
-      {/* Recent Books */}
-      {booksData && booksData.books.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold mb-4 text-gray-800">📖 Últimos Livros</h2>
-          <Card>
-            <div className="space-y-3">
-              {booksData.books.slice(0, 3).map((book) => {
-                const genre = GENRES[book.genre];
-                const ratingEmoji = book.rating === 3 ? '😍' : book.rating === 2 ? '🙂' : book.rating === 1 ? '😐' : null;
 
-                return (
-                  <div
-                    key={book.id}
-                    className="flex items-center gap-4 p-3 rounded-xl bg-background"
-                  >
-                    <div
-                      className="w-12 h-16 rounded-lg flex items-center justify-center text-2xl shadow-sm"
-                      style={{ backgroundColor: genre?.mapColor }}
-                    >
-                      {genre?.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold truncate text-gray-800">{book.title}</h4>
-                      <p className="text-sm text-gray-500 truncate">{book.author}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge color={genre?.color}>{genre?.name}</Badge>
-                        {book.child && (
-                          <span className="text-xs text-gray-400">
-                            {book.child.avatar} {book.child.name}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {ratingEmoji && <span className="text-2xl">{ratingEmoji}</span>}
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        </div>
-      )}
 
       {/* Add Book Modal */}
       <AddBookModal
@@ -497,8 +436,8 @@ function AddChildModal({
               key={a}
               onClick={() => setAvatar(a)}
               className={`w-10 h-10 rounded-lg text-xl transition-all ${avatar === a
-                  ? 'scale-110 shadow-md ring-2 ring-primary'
-                  : 'opacity-60 hover:opacity-100'
+                ? 'scale-110 shadow-md ring-2 ring-primary'
+                : 'opacity-60 hover:opacity-100'
                 }`}
               style={{ backgroundColor: avatar === a ? '#F5A623' : '#f3f4f6' }}
             >
