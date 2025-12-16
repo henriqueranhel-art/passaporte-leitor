@@ -102,7 +102,7 @@ npm run dev
 
 # Ou separadamente:
 npm run dev:backend   # http://localhost:3000
-npm run dev:frontend  # http://localhost:5173
+npm run dev:frontend  # http://localhost:5175
 ```
 
 ## 🌐 API Endpoints
