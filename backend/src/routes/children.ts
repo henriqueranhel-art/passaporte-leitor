@@ -73,7 +73,7 @@ childRoutes.get('/family/:familyId', async (c) => {
         },
         orderBy: { updatedAt: 'desc' }
       },
-      readingLogs: {
+      readingSessions: {
         where: {
           date: {
             gte: new Date(new Date().setDate(new Date().getDate() - 7)) // Last 7 days
@@ -99,30 +99,62 @@ childRoutes.get('/family/:familyId', async (c) => {
     const levelProgress = Math.min(100, Math.max(0, ((bookCount - prevLevelBooks) / (nextLevelBooks - prevLevelBooks)) * 100));
 
     // 2. Calculate Streak & Today's Reading
-    const todayLog = child.readingLogs.find((l: any) => {
-      const d = new Date(l.date);
+    // Sum all minutes from today's sessions
+    const todaySessions = child.readingSessions.filter((s: any) => {
+      const d = new Date(s.date);
       return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
     });
 
-    // Simple streak calculation (mocked properly would need complex query)
-    // For now we assume if they read today or yesterday, streak is kept.
-    // In a real app we'd query distinct dates.
-    const streak = child.readingLogs.length > 0 ? child.readingLogs.length : 0; // Simplified
+    const todayMinutes = todaySessions.reduce((sum: number, s: any) => sum + (s.minutes || 0), 0);
+
+    // Calculate streak: count consecutive days with reading
+    // Get unique dates from sessions
+    const uniqueDates = Array.from(
+      new Set(
+        child.readingSessions.map((s: any) => {
+          const d = new Date(s.date);
+          return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        })
+      )
+    ).sort().reverse(); // Most recent first
+
+    // Count consecutive days from today backwards
+    let streak = 0;
+    const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+
+    if (uniqueDates.includes(todayKey)) {
+      streak = 1;
+      for (let i = 1; i < uniqueDates.length; i++) {
+        const currentDate = new Date(today);
+        currentDate.setDate(currentDate.getDate() - i);
+        const expectedKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
+
+        if (uniqueDates.includes(expectedKey)) {
+          streak++;
+        } else {
+          break; // Streak broken
+        }
+      }
+    }
 
     // 3. Weekly Activity
     const weekSessions = Array.from({ length: 7 }).map((_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (6 - i)); // Last 6 days + today
-      const log = child.readingLogs.find((l: any) => {
-        const ld = new Date(l.date);
-        return ld.getDate() === d.getDate() && ld.getMonth() === d.getMonth() && ld.getFullYear() === d.getFullYear();
+
+      // Get ALL sessions for this day and sum the minutes
+      const daySessions = child.readingSessions.filter((s: any) => {
+        const sd = new Date(s.date);
+        return sd.getDate() === d.getDate() && sd.getMonth() === d.getMonth() && sd.getFullYear() === d.getFullYear();
       });
+
+      const dayMinutes = daySessions.reduce((sum: number, s: any) => sum + (s.minutes || 0), 0);
 
       const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
       return {
         day: dayNames[d.getDay()],
-        status: log ? (log.minutes >= 15 ? 'success' : 'neutral') : 'fail', // >=15 min is success, <15 neutral, 0 fail
-        label: log ? (log.minutes > 0 ? `${log.minutes}m` : '✓') : '✗'
+        status: dayMinutes > 0 ? (dayMinutes >= 15 ? 'success' : 'neutral') : 'fail', // >=15 min is success, <15 neutral, 0 fail
+        label: dayMinutes > 0 ? `${dayMinutes}m` : '✗'
       };
     });
 
@@ -156,7 +188,7 @@ childRoutes.get('/family/:familyId', async (c) => {
       booksCount: bookCount,
       streak, // Simplified
       todayReading: {
-        minutes: todayLog ? todayLog.minutes : 0,
+        minutes: todayMinutes,
         goal: 15 // Hardcoded goal for now
       },
       weeklyActivity: weekSessions, // Mapped to expected format

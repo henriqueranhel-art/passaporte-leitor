@@ -6,6 +6,7 @@ import { Button, Card, Modal, Input } from '../components/ui';
 import { AVATARS } from '../lib/types';
 import { ChildCard } from '../components/ChildCard';
 import { AddBookModal } from '../components/AddBookModal';
+import { LogReadingModal } from '../components/LogReadingModal';
 
 export default function Dashboard() {
   const familyId = useFamilyId();
@@ -16,6 +17,7 @@ export default function Dashboard() {
 
   const [showAddBook, setShowAddBook] = useState(false);
   const [showAddChild, setShowAddChild] = useState(false);
+  const [showLogReading, setShowLogReading] = useState(false);
 
   // Fetch family stats
   const { data: familyStats } = useQuery({
@@ -80,8 +82,8 @@ export default function Dashboard() {
                   setShowAddBook(true);
                 }}
                 onLogReading={() => {
-                  // TODO: Implement Log Reading Modal
-                  console.log('Log reading for', child.name);
+                  setSelectedChild(child.id);
+                  setShowLogReading(true);
                 }}
                 onViewDetails={() => setSelectedChild(child.id)} // Assuming this is the desired behavior for now, as `navigate` is not defined in the provided context
               />
@@ -99,9 +101,22 @@ export default function Dashboard() {
         onClose={() => setShowAddBook(false)}
         child={selectedChild}
         onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['children', familyId] });
           queryClient.invalidateQueries({ queryKey: ['familyBooks'] });
           queryClient.invalidateQueries({ queryKey: ['familyStats'] });
           triggerConfetti();
+        }}
+      />
+
+      {/* Log Reading Modal */}
+      <LogReadingModal
+        isOpen={showLogReading}
+        onClose={() => setShowLogReading(false)}
+        child={selectedChild}
+        currentBooks={selectedChild?.currentBooks || []}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['children', familyId] });
+          queryClient.invalidateQueries({ queryKey: ['familyStats'] });
         }}
       />
 

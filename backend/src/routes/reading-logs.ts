@@ -4,23 +4,25 @@ import prisma from '../lib/prisma.js';
 
 export const readingLogRoutes = new Hono();
 
-const createLogSchema = z.object({
+const createSessionSchema = z.object({
     childId: z.string().cuid(),
-    bookId: z.string().cuid().optional(),
+    bookId: z.string().cuid(), // Required now
     minutes: z.number().int().min(1),
-    pages: z.number().int().optional(),
+    pageEnd: z.number().int().optional(),
+    mood: z.number().int().min(1).max(5).optional(),
+    finishedBook: z.boolean().optional(),
     date: z.string().datetime().optional()
 });
 
 readingLogRoutes.post('/', async (c) => {
     const body = await c.req.json();
 
-    const validation = createLogSchema.safeParse(body);
+    const validation = createSessionSchema.safeParse(body);
     if (!validation.success) {
         return c.json({ error: 'Dados inválidos', details: validation.error.issues }, 400);
     }
 
-    const { childId, bookId, minutes, pages, date } = validation.data;
+    const { childId, bookId, minutes, pageEnd, mood, finishedBook, date } = validation.data;
 
     // Verify child exists
     const child = await prisma.child.findUnique({ where: { id: childId } });
@@ -28,19 +30,41 @@ readingLogRoutes.post('/', async (c) => {
         return c.json({ error: 'Criança não encontrada' }, 404);
     }
 
-    const log = await (prisma as any).readingLog.create({
+    // Verify book exists
+    const book = await prisma.book.findUnique({ where: { id: bookId } });
+    if (!book) {
+        return c.json({ error: 'Livro não encontrado' }, 404);
+    }
+
+    const session = await prisma.readingSession.create({
         data: {
             childId,
             bookId,
             minutes,
-            pages: pages || 0,
+            pageEnd,
+            mood,
+            finishedBook: finishedBook || false,
             date: date ? new Date(date) : new Date(),
         }
     });
 
-    // If bookId is provided, might want to update book progress too?
-    // Use existing book update route logic or duplicate minimal needed here.
-    // For now just logging.
+    // If book was finished, update book status
+    if (finishedBook && book.status !== 'finished') {
+        await prisma.book.update({
+            where: { id: bookId },
+            data: {
+                status: 'finished',
+                finishDate: new Date(),
+                currentPage: pageEnd || book.totalPages || undefined
+            }
+        });
+    } else if (pageEnd && book.status === 'reading') {
+        // Update current page if book is being read
+        await prisma.book.update({
+            where: { id: bookId },
+            data: { currentPage: pageEnd }
+        });
+    }
 
-    return c.json(log, 201);
+    return c.json(session, 201);
 });

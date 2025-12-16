@@ -10,7 +10,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5175,
+    port: parseInt(process.env.PORT || '5175'),
+    host: true, // Listen on all addresses for Railway
     proxy: {
       '/api': {
         target: process.env.VITE_API_URL || 'http://localhost:3000',

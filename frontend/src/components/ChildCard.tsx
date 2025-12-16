@@ -354,14 +354,6 @@ export function ChildCard({ child, onAddBook, onLogReading, onViewDetails }: Chi
                             A Ler ({child.currentBooks?.length || 0})
                         </span>
                     </div>
-                    <button
-                        onClick={onAddBook}
-                        className="text-sm font-medium flex items-center gap-1 hover:underline"
-                        style={{ color: COLORS.primary }}
-                    >
-                        <span>+</span>
-                        <span>Novo livro</span>
-                    </button>
                 </div>
 
                 {hasCurrentBooks ? (

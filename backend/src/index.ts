@@ -1,7 +1,9 @@
+import 'dotenv/config';
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { authMiddleware } from './middleware/auth.js';
 import { familyRoutes } from './routes/family.js';
 import { childRoutes } from './routes/children.js';
 import { bookRoutes } from './routes/books.js';
@@ -19,7 +21,9 @@ const app = new Hono();
 app.use('*', logger());
 app.use('*', cors({
   origin: (origin) => {
-    return origin.endsWith('5173') || origin.endsWith('5175') ? origin : 'http://localhost:5173';
+    // Allow requests from localhost:5175 or any origin ending with 5175
+    if (!origin) return 'http://localhost:5175'; // For non-browser requests
+    return origin.includes('localhost:5175') ? origin : 'http://localhost:5175';
   },
   credentials: true,
 }));
@@ -47,12 +51,16 @@ app.get('/health', (c) => {
 
 const api = new Hono();
 
+// Public routes (no auth required)
+api.route('/auth', authRoutes);
+
+// Protected routes (auth required)
+api.use('*', authMiddleware);
 api.route('/family', familyRoutes);
 api.route('/children', childRoutes);
 api.route('/books', bookRoutes);
 api.route('/achievements', achievementRoutes);
 api.route('/stats', statsRoutes);
-api.route('/auth', authRoutes);
 api.route('/reading-logs', readingLogRoutes);
 
 app.route('/api', api);

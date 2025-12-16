@@ -54,21 +54,30 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* Family Info */}
-        {family && (
-          <div className="p-4 rounded-xl bg-background mt-4">
-            <p className="text-xs text-gray-500 mb-1">👨‍👩‍👧‍👦 Família</p>
-            <div className="flex justify-between items-center">
-              <p className="font-bold text-sm text-gray-800">{family.name}</p>
-              <button
-                onClick={() => useStore.getState().logout()}
-                className="text-xs text-red-400 hover:text-red-600 font-bold"
-              >
-                Sair
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Family Info & Logout */}
+        <div className="p-4 rounded-xl bg-background mt-4">
+          {family ? (
+            <>
+              <p className="text-xs text-gray-500 mb-1">👨‍👩‍👧‍👦 Família</p>
+              <div className="flex justify-between items-center">
+                <p className="font-bold text-sm text-gray-800">{family.name}</p>
+                <button
+                  onClick={() => useStore.getState().logout()}
+                  className="text-xs text-red-400 hover:text-red-600 font-bold"
+                >
+                  Sair
+                </button>
+              </div>
+            </>
+          ) : (
+            <button
+              onClick={() => useStore.getState().logout()}
+              className="w-full text-sm text-red-400 hover:text-red-600 font-bold py-2"
+            >
+              🚪 Sair
+            </button>
+          )}
+        </div>
 
         {/* Tip */}
         <div className="p-4 rounded-xl bg-green-50 mt-4">

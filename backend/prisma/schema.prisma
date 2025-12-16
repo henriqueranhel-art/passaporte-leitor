@@ -58,7 +58,7 @@ model Child {
   updatedAt DateTime @updatedAt
 
   books        Book[]
-  readingLogs  ReadingLog[]
+  readingSessions ReadingSession[]
   achievements ChildAchievement[]
 
   @@map("children")
@@ -92,7 +92,7 @@ model Book {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  readingLogs ReadingLog[]
+  readingSessions ReadingSession[]
 
   @@index([childId])
   @@index([genre])
@@ -158,22 +158,34 @@ enum AchievementCategory {
 
 // Os índices principais já estão definidos acima com @@index
 
-model ReadingLog {
+model ReadingSession {
   id        String   @id @default(cuid())
   childId   String
   child     Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
   
-  bookId    String?
-  book      Book?    @relation(fields: [bookId], references: [id], onDelete: SetNull)
-
-  date      DateTime @default(now()) // Data da leitura
-  minutes   Int      @default(0)     // Tempo lido
-  pages     Int?     @default(0)     // Páginas lidas
-
+  // Dados da sessão
+  date      DateTime @default(now())  // Dia da sessão
+  minutes   Int                        // Duração em minutos (obrigatório)
+  
+  // Livro (obrigatório)
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id])
+  
+  // Progresso (opcional)
+  pageEnd   Int?                       // Página onde terminou
+  
+  // Feedback (opcional)
+  mood      Int?     @default(3)       // 1-5 (😫 a 🤩)
+  
+  // Terminou o livro nesta sessão?
+  finishedBook Boolean @default(false)
+  
+  // Timestamps
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([childId])
-  @@index([date])
-  @@map("reading_logs")
+  @@index([childId, date])
+  @@index([bookId])
+  @@map("reading_sessions")
 }

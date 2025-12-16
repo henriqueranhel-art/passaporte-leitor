@@ -324,9 +324,11 @@ const SuccessScreen = ({ data, onClose }: any) => {
                 }
             </p>
 
-            <Button onClick={onClose} className="w-full max-w-xs">
-                Voltar ao Passaporte
-            </Button>
+            <div className="flex justify-center">
+                <Button onClick={onClose} className="w-full max-w-xs">
+                    Voltar ao Passaporte
+                </Button>
+            </div>
         </div>
     );
 };

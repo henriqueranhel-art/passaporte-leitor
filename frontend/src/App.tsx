@@ -24,10 +24,11 @@ export default function App() {
   const { setFamily, setChildren } = useStore();
 
   // Fetch family data if we have an ID
-  const { data: familyData, isLoading: familyLoading } = useQuery({
+  const { data: familyData, isLoading: familyLoading, error: familyError } = useQuery({
     queryKey: ['family', familyId],
     queryFn: () => familyApi.get(familyId!),
     enabled: !!familyId && isOnboardingComplete,
+    retry: 1, // Only retry once to avoid long waits on auth errors
   });
 
   // Fetch children
@@ -35,6 +36,7 @@ export default function App() {
     queryKey: ['children', familyId],
     queryFn: () => childrenApi.getByFamily(familyId!),
     enabled: !!familyId && isOnboardingComplete,
+    retry: 1,
   });
 
   useEffect(() => {
@@ -47,14 +49,37 @@ export default function App() {
 
   const isLoading = familyLoading || childrenLoading;
 
-  // Check for auth token (legacy support)
+  // Check for auth token - this is the primary authentication check
   const hasToken = !!localStorage.getItem('authToken');
 
-  // Show Auth if not logged in / onboarding not complete
-  if (!isOnboardingComplete || !hasToken) {
+  // Redirect to auth if no token, regardless of onboarding state
+  // This prevents bypass via persisted state
+  if (!hasToken) {
     return (
       <Routes>
-        <Route path="*" element={<AuthPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      </Routes>
+    );
+  }
+
+  // Show Auth if onboarding not complete (even with token)
+  if (!isOnboardingComplete) {
+    return (
+      <Routes>
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      </Routes>
+    );
+  }
+
+  // Check if familyId is missing - logout and redirect
+  if (!familyId) {
+    useStore.getState().logout();
+    return (
+      <Routes>
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
       </Routes>
     );
   }
@@ -62,6 +87,17 @@ export default function App() {
   // Show loading while fetching data
   if (isLoading) {
     return <LoadingScreen />;
+  }
+
+  // If family data failed to load (e.g., 401 unauthorized), logout and redirect
+  if (familyError) {
+    useStore.getState().logout();
+    return (
+      <Routes>
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      </Routes>
+    );
   }
 
   return (
@@ -75,6 +111,7 @@ export default function App() {
           <Route path="imprimir" element={<PrintPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/auth" element={<Navigate to="/" replace />} />
       </Routes>
       <Confetti active={showConfetti} />
     </>
