@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Modal, Button } from '../components/ui';
 import clsx from 'clsx';
+import type { Child } from '../lib/types';
 
 const COLORS = {
     primary: '#E67E22',
@@ -20,8 +21,48 @@ const MOOD_OPTIONS = [
     { value: 5, emoji: '🤩', label: 'Incrível!' },
 ];
 
+// TypeScript Interfaces
+interface SessionData {
+    bookId?: string;
+    selectedBook?: Child['currentBooks'][0];
+    minutes?: number;
+    pageEnd?: number;
+    mood?: number;
+    finishedBook?: boolean;
+}
+
+interface StepProps {
+    data: SessionData;
+    onChange: (data: SessionData) => void;
+    onNext: () => void;
+    onCancel?: () => void;
+    onBack?: () => void;
+}
+
+interface Step1Props extends StepProps {
+    currentBooks: Child['currentBooks'];
+}
+
+interface Step5Props extends Omit<StepProps, 'onNext'> {
+    onSubmit: () => void;
+    isLoading: boolean;
+}
+
+interface SuccessProps {
+    data: SessionData;
+    onClose: () => void;
+}
+
+interface LogReadingModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    child: Child | null;
+    currentBooks: Child['currentBooks'];
+    onSuccess: () => void;
+}
+
 // Step 1: Select Book
-const Step1SelectBook = ({ data, onChange, onNext, onCancel, currentBooks }) => {
+const Step1SelectBook = ({ data, onChange, onNext, onCancel, currentBooks }: Step1Props) => {
     const hasBooks = currentBooks && currentBooks.length > 0;
 
     if (!hasBooks) {
@@ -94,7 +135,7 @@ const Step1SelectBook = ({ data, onChange, onNext, onCancel, currentBooks }) => 
 };
 
 // Step 2: Enter Minutes
-const Step2EnterMinutes = ({ data, onChange, onNext, onBack }) => {
+const Step2EnterMinutes = ({ data, onChange, onNext, onBack }: StepProps) => {
     const quickMinutes = [15, 30, 45, 60];
 
     return (
@@ -151,7 +192,7 @@ const Step2EnterMinutes = ({ data, onChange, onNext, onBack }) => {
 };
 
 // Step 3: Page Progress (Optional)
-const Step3PageProgress = ({ data, onChange, onNext, onBack }) => {
+const Step3PageProgress = ({ data, onChange, onNext, onBack }: StepProps) => {
     const book = data.selectedBook;
     const hasPageTracking = book?.totalPages && book.totalPages > 0;
 
@@ -205,7 +246,7 @@ const Step3PageProgress = ({ data, onChange, onNext, onBack }) => {
 };
 
 // Step 4: Mood
-const Step4Mood = ({ data, onChange, onNext, onBack }) => {
+const Step4Mood = ({ data, onChange, onNext, onBack }: StepProps) => {
     return (
         <div className="space-y-6">
             <div className="text-center mb-4">
@@ -246,7 +287,7 @@ const Step4Mood = ({ data, onChange, onNext, onBack }) => {
 };
 
 // Step 5: Finished Book?
-const Step5FinishedBook = ({ data, onChange, onSubmit, onBack, isLoading }) => {
+const Step5FinishedBook = ({ data, onChange, onSubmit, onBack, isLoading }: Step5Props) => {
     const book = data.selectedBook;
 
     return (
@@ -311,7 +352,7 @@ const Step5FinishedBook = ({ data, onChange, onSubmit, onBack, isLoading }) => {
 };
 
 // Success Screen
-const SuccessScreen = ({ data, onClose }) => {
+const SuccessScreen = ({ data, onClose }: SuccessProps) => {
     return (
         <div className="text-center py-8">
             <div className="text-6xl mb-6 animate-bounce">
@@ -339,22 +380,29 @@ const SuccessScreen = ({ data, onClose }) => {
 };
 
 // Main Component
-export function LogReadingModal({ isOpen, onClose, child, currentBooks, onSuccess }) {
+export function LogReadingModal({ isOpen, onClose, child, currentBooks, onSuccess }: LogReadingModalProps) {
     const [step, setStep] = useState(1);
-    const [sessionData, setSessionData] = useState({
+    const [sessionData, setSessionData] = useState<SessionData>({
         mood: 3 // Default mood
     });
-    const queryClient = useQueryClient();
+
 
     const createSessionMutation = useMutation({
-        mutationFn: async (data) => {
+        mutationFn: async () => {
             const response = await fetch('/api/reading-logs', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify({
+                    childId: child?.id,
+                    bookId: sessionData.bookId,
+                    minutes: sessionData.minutes,
+                    pageEnd: sessionData.pageEnd,
+                    mood: sessionData.mood,
+                    finishedBook: sessionData.finishedBook || false,
+                })
             });
             if (!response.ok) throw new Error('Failed to create session');
             return response.json();
@@ -371,14 +419,7 @@ export function LogReadingModal({ isOpen, onClose, child, currentBooks, onSucces
         if (!child || !sessionData.bookId) return;
 
         try {
-            await createSessionMutation.mutateAsync({
-                childId: child.id,
-                bookId: sessionData.bookId,
-                minutes: sessionData.minutes,
-                pageEnd: sessionData.pageEnd,
-                mood: sessionData.mood,
-                finishedBook: sessionData.finishedBook || false,
-            });
+            await createSessionMutation.mutateAsync();
 
             setStep(6); // Success screen
             onSuccess();
