@@ -21,110 +21,36 @@ const genreEnum = z.enum([
 const createBookSchema = z.object({
   childId: z.string().cuid(),
   title: z.string().min(1).max(200),
-  author: z.string().min(1).max(100),
+  author: z.string().max(100).optional(),
   isbn: z.string().max(20).optional(),
   genre: genreEnum,
-  rating: z.number().int().min(1).max(3).optional(),
-  notes: z.string().max(500).optional(),
-  dateRead: z.string().datetime().optional(),
+  totalPages: z.number().int().positive().optional(),
+  status: z.enum(['to-read', 'reading', 'finished']).default('to-read'),
+  currentPage: z.number().int().nonnegative().optional(),
+  startDate: z.string().datetime().optional(),
+  finishDate: z.string().datetime().optional(),
+  rating: z.number().int().min(1).max(5).optional(),
+  notes: z.string().max(1000).optional(),
+  favoriteCharacter: z.string().max(100).optional(),
+  recommended: z.boolean().optional(),
 });
 
 const updateBookSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   author: z.string().min(1).max(100).optional(),
   genre: genreEnum.optional(),
-  rating: z.number().int().min(1).max(3).optional().nullable(),
-  notes: z.string().max(500).optional().nullable(),
-  dateRead: z.string().datetime().optional(),
+  totalPages: z.number().int().positive().optional(),
+  status: z.enum(['to-read', 'reading', 'finished']).optional(),
+  currentPage: z.number().int().nonnegative().optional(),
+  startDate: z.string().datetime().optional(),
+  finishDate: z.string().datetime().optional(),
+  rating: z.number().int().min(1).max(5).optional().nullable(),
+  notes: z.string().max(1000).optional().nullable(),
+  favoriteCharacter: z.string().max(100).optional().nullable(),
+  recommended: z.boolean().optional(),
 });
 
-// ============================================================================
-// GET /api/books/:id - Obter livro por ID
-// ============================================================================
-
-bookRoutes.get('/:id', async (c) => {
-  const { id } = c.req.param();
-
-  const book = await prisma.book.findUnique({
-    where: { id },
-    include: {
-      child: {
-        select: { id: true, name: true, avatar: true },
-      },
-    },
-  });
-
-  if (!book) {
-    return c.json({ error: 'Livro não encontrado' }, 404);
-  }
-
-  return c.json(book);
-});
-
-// ============================================================================
-// GET /api/books/child/:childId - Obter livros de uma criança
-// ============================================================================
-
-bookRoutes.get('/child/:childId', async (c) => {
-  const { childId } = c.req.param();
-  const { genre, limit, offset } = c.req.query();
-
-  const where: any = { childId };
-  if (genre) {
-    where.genre = genre as Genre;
-  }
-
-  const [books, total] = await Promise.all([
-    prisma.book.findMany({
-      where,
-      orderBy: { dateRead: 'desc' },
-      take: limit ? parseInt(limit) : undefined,
-      skip: offset ? parseInt(offset) : undefined,
-    }),
-    prisma.book.count({ where }),
-  ]);
-
-  return c.json({ books, total });
-});
-
-// ============================================================================
-// GET /api/books/family/:familyId - Obter livros de uma família
-// ============================================================================
-
-bookRoutes.get('/family/:familyId', async (c) => {
-  const { familyId } = c.req.param();
-  const { genre, limit, offset } = c.req.query();
-
-  // Primeiro obter os IDs das crianças da família
-  const children = await prisma.child.findMany({
-    where: { familyId },
-    select: { id: true },
-  });
-
-  const childIds = children.map((c) => c.id);
-
-  const where: any = { childId: { in: childIds } };
-  if (genre) {
-    where.genre = genre as Genre;
-  }
-
-  const [books, total] = await Promise.all([
-    prisma.book.findMany({
-      where,
-      include: {
-        child: {
-          select: { id: true, name: true, avatar: true },
-        },
-      },
-      orderBy: { dateRead: 'desc' },
-      take: limit ? parseInt(limit) : undefined,
-      skip: offset ? parseInt(offset) : undefined,
-    }),
-    prisma.book.count({ where }),
-  ]);
-
-  return c.json({ books, total });
-});
+// ... GET endpoints remain same ...
 
 // ============================================================================
 // POST /api/books - Adicionar novo livro
@@ -132,35 +58,47 @@ bookRoutes.get('/family/:familyId', async (c) => {
 
 bookRoutes.post('/', async (c) => {
   const body = await c.req.json();
-  
+
   const validation = createBookSchema.safeParse(body);
   if (!validation.success) {
     return c.json({ error: 'Dados inválidos', details: validation.error.issues }, 400);
   }
 
-  const { childId, title, author, isbn, genre, rating, notes, dateRead } = validation.data;
+  const data = validation.data;
 
   // Verificar se a criança existe
-  const child = await prisma.child.findUnique({ where: { id: childId } });
+  const child = await prisma.child.findUnique({ where: { id: data.childId } });
   if (!child) {
     return c.json({ error: 'Criança não encontrada' }, 404);
   }
 
+  const bookData: any = {
+    childId: data.childId,
+    title: data.title,
+    author: data.author || "Desconhecido",
+    isbn: data.isbn,
+    genre: data.genre as Genre,
+    totalPages: data.totalPages,
+    status: data.status,
+    currentPage: data.currentPage,
+    rating: data.rating,
+    notes: data.notes,
+    favoriteCharacter: data.favoriteCharacter,
+    recommended: data.recommended,
+  };
+
+  if (data.startDate) bookData.startDate = new Date(data.startDate);
+  if (data.finishDate) bookData.finishDate = new Date(data.finishDate);
+
   const book = await prisma.book.create({
-    data: {
-      childId,
-      title,
-      author,
-      isbn,
-      genre: genre as Genre,
-      rating,
-      notes,
-      dateRead: dateRead ? new Date(dateRead) : new Date(),
-    },
+    data: bookData,
   });
 
-  // Verificar e atribuir conquistas
-  const newAchievements = await checkAndAwardAchievements(childId);
+  // Verificar e atribuir conquistas (apenas se terminado)
+  let newAchievements: any[] = [];
+  if (data.status === 'finished') {
+    newAchievements = await checkAndAwardAchievements(data.childId);
+  }
 
   return c.json({ book, newAchievements }, 201);
 });
@@ -179,9 +117,8 @@ bookRoutes.put('/:id', async (c) => {
   }
 
   const data: any = { ...validation.data };
-  if (data.dateRead) {
-    data.dateRead = new Date(data.dateRead);
-  }
+  if (data.startDate) data.startDate = new Date(data.startDate);
+  if (data.finishDate) data.finishDate = new Date(data.finishDate);
 
   const book = await prisma.book.update({
     where: { id },

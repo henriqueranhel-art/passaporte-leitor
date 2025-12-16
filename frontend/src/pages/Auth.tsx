@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Input, Card } from '../components/ui';
+import { Button, Input, Select } from '../components/ui';
 import { AVATARS } from '../lib/types';
 import { authApi } from '../lib/api';
 import { useStore } from '../lib/store';
@@ -143,6 +143,12 @@ const LoginScreen = ({ email, onBack, onLogin }: { email: string, onBack: () => 
     );
 };
 
+const currentYear = new Date().getFullYear();
+const BIRTH_YEARS = Array.from(
+    { length: 15 }, // 15 anos de opções
+    (_, i) => currentYear - 4 - i // Começar 4 anos atrás (excluir atual + 3 anteriores)
+);
+
 const RegisterScreen = ({ email, onBack, onRegister }: { email: string, onBack: () => void, onRegister: (data: any) => void }) => {
     const [step, setStep] = useState(1);
     const [familyName, setFamilyName] = useState('');
@@ -150,6 +156,7 @@ const RegisterScreen = ({ email, onBack, onRegister }: { email: string, onBack: 
     const [confirmPassword, setConfirmPassword] = useState('');
 
     const [childName, setChildName] = useState('');
+    const [birthYear, setBirthYear] = useState('');
     const [childAvatar, setChildAvatar] = useState('🧒');
 
     const [isLoading, setIsLoading] = useState(false);
@@ -170,8 +177,18 @@ const RegisterScreen = ({ email, onBack, onRegister }: { email: string, onBack: 
     };
 
     const handleRegister = async () => {
+        const newErrors: Record<string, string> = {};
+
         if (!childName) {
-            setErrors({ ...errors, childName: 'Nome da criança é obrigatório' });
+            newErrors.childName = 'Nome da criança é obrigatório';
+        }
+
+        if (!birthYear) {
+            newErrors.birthYear = 'Seleciona o ano de nascimento';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors({ ...errors, ...newErrors });
             return;
         }
 
@@ -185,6 +202,7 @@ const RegisterScreen = ({ email, onBack, onRegister }: { email: string, onBack: 
                 child: {
                     name: childName,
                     avatar: childAvatar,
+                    birthYear: parseInt(birthYear),
                 },
             });
             onRegister(data);
@@ -285,18 +303,28 @@ const RegisterScreen = ({ email, onBack, onRegister }: { email: string, onBack: 
                     error={errors.childName}
                 />
 
+                <Select
+                    label="Ano de nascimento"
+                    value={birthYear}
+                    onChange={(v) => { setBirthYear(v); setErrors({ ...errors, birthYear: '' }); }}
+                    options={BIRTH_YEARS}
+                    placeholder="Selecionar ano..."
+                    icon="📅"
+                    error={errors.birthYear}
+                />
+
                 <div className="mb-6">
                     <label className="block text-sm font-medium mb-3" style={{ color: COLORS.text }}>
                         Avatar
                     </label>
-                    <div className="grid grid-cols-6 gap-2">
-                        {AVATARS.slice(0, 12).map((a) => (
+                    <div className="grid grid-cols-8 gap-2">
+                        {AVATARS.map((a) => (
                             <button
                                 key={a}
                                 onClick={() => setChildAvatar(a)}
                                 className={`w-10 h-10 rounded-xl text-xl transition-all ${childAvatar === a
-                                        ? 'scale-110 shadow-lg ring-2 ring-orange-400'
-                                        : 'opacity-60 hover:opacity-100'
+                                    ? 'scale-110 shadow-lg ring-2 ring-orange-400'
+                                    : 'opacity-60 hover:opacity-100'
                                     }`}
                                 style={{
                                     backgroundColor: childAvatar === a ? COLORS.primaryLight : '#f3f4f6',

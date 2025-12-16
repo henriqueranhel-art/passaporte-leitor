@@ -16,6 +16,7 @@ const registerSchema = z.object({
     child: z.object({
         name: z.string().min(2),
         avatar: z.string(),
+        birthYear: z.number(),
     }),
 });
 
@@ -80,6 +81,7 @@ app.post('/register', async (c) => {
                     familyId: family.id,
                     name: child.name,
                     avatar: child.avatar,
+                    birthYear: child.birthYear,
                 },
             });
 

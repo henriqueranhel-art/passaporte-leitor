@@ -123,18 +123,79 @@ export function Input({ label, icon, error, className, ...props }: InputProps) {
 }
 
 // ============================================================================
+// SELECT
+// ============================================================================
+
+interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
+  label?: string;
+  icon?: React.ReactNode;
+  error?: string;
+  options: (string | number | { label: string; value: string | number })[];
+  onChange?: (value: any) => void;
+  placeholder?: string;
+}
+
+export function Select({ label, icon, error, className, options, onChange, ...props }: SelectProps) {
+  return (
+    <div className="mb-4">
+      {label && (
+        <label className="block text-sm font-medium mb-2 text-gray-800">
+          {label}
+        </label>
+      )}
+      <div className="relative">
+        {icon && (
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl pointer-events-none">
+            {icon}
+          </span>
+        )}
+        <select
+          className={clsx(
+            'w-full px-4 py-3 rounded-xl border-2 text-lg transition-colors appearance-none bg-white',
+            'focus:outline-none focus:border-primary',
+            icon && 'pl-12',
+            error ? 'border-red-300' : 'border-gray-200',
+            className
+          )}
+          onChange={(e) => onChange?.(e.target.value)}
+          {...props}
+        >
+          <option value="" disabled selected>
+            {props.placeholder || 'Selecionar...'}
+          </option>
+          {options.map((opt) => {
+            const value = typeof opt === 'object' ? opt.value : opt;
+            const label = typeof opt === 'object' ? opt.label : opt;
+            return (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            );
+          })}
+        </select>
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+          ▼
+        </div>
+      </div>
+      {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+    </div>
+  );
+}
+
+// ============================================================================
 // MODAL
 // ============================================================================
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title: string;
+  title: React.ReactNode;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  variant?: 'default' | 'white';
 }
 
-export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, size = 'md', variant = 'default' }: ModalProps) {
   if (!isOpen) return null;
 
   const sizes = {
@@ -143,6 +204,14 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
   };
+
+  const headerStyles = variant === 'default'
+    ? 'bg-primary text-white border-b-transparent'
+    : 'bg-white text-gray-800 border-b-gray-100';
+
+  const closeButtonStyles = variant === 'default'
+    ? 'text-white/80 hover:text-white'
+    : 'text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center';
 
   return (
     <div
@@ -156,11 +225,11 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b bg-primary flex justify-between items-center">
-          <h2 className="text-xl font-bold text-white">{title}</h2>
+        <div className={clsx("p-6 border-b flex justify-between items-center", headerStyles)}>
+          <div className="text-xl font-bold flex items-center gap-2">{title}</div>
           <button
             onClick={onClose}
-            className="text-white/80 hover:text-white text-2xl leading-none"
+            className={clsx("text-2xl leading-none transition-colors", closeButtonStyles)}
           >
             &times;
           </button>

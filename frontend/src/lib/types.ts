@@ -45,6 +45,47 @@ export interface Child {
   birthYear?: number;
   createdAt: string;
   updatedAt: string;
+
+  // Dashboard stats (enriched fields)
+  level: {
+    name: string;
+    color: string;
+    icon: string;
+    nextLevel: string;
+    booksToNextLevel: number;
+    progress: number;
+  };
+  booksCount: number;
+  streak: number;
+  todayReading: {
+    minutes: number;
+    goal: number;
+  };
+  weeklyActivity: {
+    day: string;
+    status: 'success' | 'fail' | 'neutral';
+    label: string;
+  }[];
+  currentBooks: {
+    id: string;
+    title: string;
+    author: string;
+    cover?: string;
+    progress?: number;
+    totalPages?: number;
+    currentPage?: number;
+    startDate?: string;
+    daysReading?: number;
+    type: 'page-progress' | 'page-only' | 'time-only';
+  }[];
+  lastFinishedBook?: {
+    title: string;
+    author: string;
+    genre: Genre;
+    rating: number;
+    finishedAt: string;
+  } | null;
+
   books?: Book[];
   achievements?: ChildAchievement[];
   _count?: {
@@ -59,8 +100,15 @@ export interface Book {
   author: string;
   isbn?: string;
   genre: Genre;
+  totalPages?: number;
+  status: 'to-read' | 'reading' | 'finished';
+  currentPage?: number;
+  startDate?: string;
+  finishDate?: string;
   rating?: number;
   notes?: string;
+  favoriteCharacter?: string;
+  recommended?: boolean;
   dateRead: string;
   createdAt: string;
   updatedAt: string;
@@ -179,8 +227,15 @@ export interface CreateBookInput {
   author: string;
   isbn?: string;
   genre: Genre;
+  totalPages?: number;
+  status?: 'to-read' | 'reading' | 'finished';
+  currentPage?: number;
+  startDate?: string;
+  finishDate?: string;
   rating?: number;
   notes?: string;
+  favoriteCharacter?: string;
+  recommended?: boolean;
   dateRead?: string;
 }
 
@@ -209,6 +264,10 @@ export const LEVELS: Level[] = [
 ];
 
 export const AVATARS = [
-  '🧒', '👧', '👦', '🧒🏻', '👧🏻', '👦🏻', '🧒🏽', '👧🏽', '👦🏽', '🧒🏿', '👧🏿', '👦🏿',
-  '🦸', '🦸‍♀️', '🧙', '🧙‍♀️', '🧝', '🧝‍♀️', '🦊', '🐱', '🐼', '🦁', '🐸', '🦄',
+  // Row 1 - Pessoas
+  '👱', '👱‍♀️', '👩‍🦱', '🧒', '👧', '👦', '🧒🏽', '👧🏽',
+  // Row 2 - Pessoas + Super-heróis + Magos
+  '🧒🏾', '🧒🏿', '👧🏿', '👦🏿', '🦸', '🦸‍♀️', '🧙', '🧙‍♀️',
+  // Row 3 - Elfos + Animais
+  '🧝', '🧝‍♀️', '🦊', '🐱', '🐼', '🦁', '🐸', '🦄',
 ];
