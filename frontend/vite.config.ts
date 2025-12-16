@@ -12,6 +12,10 @@ export default defineConfig({
   server: {
     port: parseInt(process.env.PORT || '5175'),
     host: true, // Listen on all addresses for Railway
+    allowedHosts: [
+      'localhost',
+      'passaporte-leitor-frontend-production.up.railway.app'
+    ],
     proxy: {
       '/api': {
         target: process.env.VITE_API_URL || 'http://localhost:3000',
