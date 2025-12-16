@@ -21,9 +21,18 @@ const app = new Hono();
 app.use('*', logger());
 app.use('*', cors({
   origin: (origin) => {
-    // Allow requests from localhost:5175 or any origin ending with 5175
-    if (!origin) return 'http://localhost:5175'; // For non-browser requests
-    return origin.includes('localhost:5175') ? origin : 'http://localhost:5175';
+    // Allow localhost for development and Railway production frontend
+    const allowedOrigins = [
+      'http://localhost:5175',
+      'https://passaporte-leitor-frontend-production.up.railway.app'
+    ];
+
+    // If no origin (like Postman) or origin is in allowed list, allow it
+    if (!origin || allowedOrigins.some(allowed => origin.includes(allowed))) {
+      return origin || allowedOrigins[0];
+    }
+
+    return allowedOrigins[0]; // Default fallback
   },
   credentials: true,
 }));
