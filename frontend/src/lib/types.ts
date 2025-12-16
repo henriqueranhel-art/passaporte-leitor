@@ -70,6 +70,7 @@ export interface Child {
     id: string;
     title: string;
     author: string;
+    genre: Genre;
     cover?: string;
     progress?: number;
     totalPages?: number;

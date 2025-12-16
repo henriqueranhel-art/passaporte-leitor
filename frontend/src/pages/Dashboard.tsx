@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useStore, useChildren, useSelectedChild, useFamilyId } from '../lib/store';
-import { booksApi, statsApi, childrenApi } from '../lib/api';
+import { statsApi, childrenApi } from '../lib/api';
 import { Button, Card, Modal, Input } from '../components/ui';
 import { AVATARS } from '../lib/types';
 import { ChildCard } from '../components/ChildCard';
@@ -25,11 +25,8 @@ export default function Dashboard() {
   });
 
   // Fetch recent books
-  const { data: booksData } = useQuery({
-    queryKey: ['familyBooks', familyId],
-    queryFn: () => booksApi.getByFamily(familyId!, { limit: 5 }),
-    enabled: !!familyId,
-  });
+  // const { data: booksData } = useQuery({ queryKey: ['books', familyId], queryFn: () => booksApi.getByFamily(familyId!, { limit: 5 }),
+
 
   return (
     <div>
@@ -74,52 +71,19 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {children.map((child) => {
-            const stats = familyStats?.childStats.find((s) => s.id === child.id);
-            const childBooks = booksData?.books.filter(b => b.childId === child.id) || [];
-            const lastBook = childBooks.length > 0 ? childBooks[0] : null;
-
             return (
               <ChildCard
                 key={child.id}
-                child={{
-                  id: child.id,
-                  name: child.name,
-                  avatar: child.avatar,
-                  level: {
-                    name: stats?.level.current.name || 'Grumete',
-                    color: stats?.level.current.color || '#BDC3C7',
-                    icon: stats?.level.current.icon || '🐣',
-                    nextLevel: stats?.level.next?.name,
-                    booksToNextLevel: stats?.level.booksToNextLevel,
-                    progress: stats?.level.progress || 0,
-                  },
-                  booksCount: stats?.bookCount || 0,
-                  streak: 0, // Mocked
-                  todayReading: { minutes: 0, goal: 15 }, // Mocked
-                  weeklyActivity: [
-                    { day: 'Seg', status: 'neutral', label: '15' },
-                    { day: 'Ter', status: 'neutral', label: '16' },
-                    { day: 'Qua', status: 'neutral', label: '17' },
-                    { day: 'Qui', status: 'neutral', label: '18' },
-                    { day: 'Sex', status: 'neutral', label: '19' },
-                    { day: 'Sáb', status: 'neutral', label: '20' },
-                    { day: 'Dom', status: 'neutral', label: '21' },
-                  ], // Mocked
-                  currentBooks: [], // Mocked
-                  lastFinishedBook: lastBook ? {
-                    title: lastBook.title,
-                    author: lastBook.author,
-                    genre: lastBook.genre,
-                    rating: lastBook.rating || 0,
-                    finishedAt: lastBook.dateRead,
-                  } : null,
-                }}
+                child={child}
                 onAddBook={() => {
-                  setSelectedChild(child.id);
+                  setSelectedChild(child.id); // Assuming setSelectedChild is the correct function based on context
                   setShowAddBook(true);
                 }}
-                onLogReading={() => alert('Funcionalidade de registo de tempo em breve!')}
-                onViewDetails={() => setSelectedChild(child.id)}
+                onLogReading={() => {
+                  // TODO: Implement Log Reading Modal
+                  console.log('Log reading for', child.name);
+                }}
+                onViewDetails={() => setSelectedChild(child.id)} // Assuming this is the desired behavior for now, as `navigate` is not defined in the provided context
               />
             );
           })}

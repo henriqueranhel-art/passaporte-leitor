@@ -48,7 +48,7 @@ familyRoutes.get('/:id', async (c) => {
 
 familyRoutes.post('/', async (c) => {
   const body = await c.req.json();
-  
+
   const validation = createFamilySchema.safeParse(body);
   if (!validation.success) {
     return c.json({ error: 'Dados inválidos', details: validation.error.issues }, 400);
@@ -132,7 +132,7 @@ familyRoutes.get('/:id/full', async (c) => {
       children: {
         include: {
           books: {
-            orderBy: { dateRead: 'desc' },
+            orderBy: { updatedAt: 'desc' },
           },
           achievements: {
             include: {

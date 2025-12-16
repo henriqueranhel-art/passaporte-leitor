@@ -148,7 +148,6 @@ npm run dev:frontend  # http://localhost:5173
 4. Adicionar variáveis de ambiente:
    - `DATABASE_URL`
    - `DIRECT_URL`
-   - `FRONTEND_URL` (URL do Vercel depois de fazer deploy)
    - `NODE_ENV=production`
 
 5. Railway deteta automaticamente o `railway.toml`
@@ -167,10 +166,6 @@ npm run dev:frontend  # http://localhost:5173
    - `VITE_API_URL`: URL do Railway (ex: `https://passaporte-leitor.up.railway.app/api`)
 
 5. Deploy!
-
-### Atualizar CORS no Backend
-
-Depois de ter o URL do Vercel, atualizar `FRONTEND_URL` no Railway para permitir CORS.
 
 ## 📊 Schema da Base de Dados
 

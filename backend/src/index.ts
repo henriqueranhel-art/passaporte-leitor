@@ -8,6 +8,7 @@ import { bookRoutes } from './routes/books.js';
 import { achievementRoutes } from './routes/achievements.js';
 import { statsRoutes } from './routes/stats.js';
 import { authRoutes } from './routes/auth.js';
+import { readingLogRoutes } from './routes/reading-logs.js';
 
 const app = new Hono();
 
@@ -17,7 +18,9 @@ const app = new Hono();
 
 app.use('*', logger());
 app.use('*', cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin) => {
+    return origin.endsWith('5173') || origin.endsWith('5175') ? origin : 'http://localhost:5173';
+  },
   credentials: true,
 }));
 
@@ -50,6 +53,7 @@ api.route('/books', bookRoutes);
 api.route('/achievements', achievementRoutes);
 api.route('/stats', statsRoutes);
 api.route('/auth', authRoutes);
+api.route('/reading-logs', readingLogRoutes);
 
 app.route('/api', api);
 

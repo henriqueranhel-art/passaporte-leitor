@@ -29,7 +29,7 @@ childRoutes.get('/:id', async (c) => {
     where: { id },
     include: {
       books: {
-        orderBy: { dateRead: 'desc' },
+        orderBy: { updatedAt: 'desc' },
       },
       achievements: {
         include: {
@@ -99,7 +99,7 @@ childRoutes.get('/family/:familyId', async (c) => {
     const levelProgress = Math.min(100, Math.max(0, ((bookCount - prevLevelBooks) / (nextLevelBooks - prevLevelBooks)) * 100));
 
     // 2. Calculate Streak & Today's Reading
-    const todayLog = child.readingLogs.find(l => {
+    const todayLog = child.readingLogs.find((l: any) => {
       const d = new Date(l.date);
       return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
     });
@@ -113,7 +113,7 @@ childRoutes.get('/family/:familyId', async (c) => {
     const weekSessions = Array.from({ length: 7 }).map((_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (6 - i)); // Last 6 days + today
-      const log = child.readingLogs.find(l => {
+      const log = child.readingLogs.find((l: any) => {
         const ld = new Date(l.date);
         return ld.getDate() === d.getDate() && ld.getMonth() === d.getMonth() && ld.getFullYear() === d.getFullYear();
       });
@@ -127,10 +127,11 @@ childRoutes.get('/family/:familyId', async (c) => {
     });
 
     // 4. Current Books
-    const currentBooks = child.books.filter(b => b.status === 'reading').map(b => ({
+    const currentBooks = child.books.filter((b: any) => b.status === 'reading').map((b: any) => ({
       id: b.id,
       title: b.title,
       author: b.author,
+      genre: b.genre,
       progress: b.totalPages && b.currentPage ? Math.round((b.currentPage / b.totalPages) * 100) : undefined,
       totalPages: b.totalPages,
       currentPage: b.currentPage,
@@ -140,7 +141,7 @@ childRoutes.get('/family/:familyId', async (c) => {
     }));
 
     // 5. Last Finished
-    const lastFinishedBook = child.books.find(b => b.status === 'finished');
+    const lastFinishedBook = child.books.find((b: any) => b.status === 'finished');
 
     return {
       ...child,

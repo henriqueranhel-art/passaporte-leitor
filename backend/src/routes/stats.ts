@@ -34,13 +34,15 @@ statsRoutes.get('/child/:childId', async (c) => {
 
   // Estatísticas de leitura
   const now = new Date();
-  const thisMonth = child.books.filter((b) => {
-    const d = new Date(b.dateRead);
+  const thisMonth = child.books.filter((b: any) => {
+    if (!b.finishDate) return false;
+    const d = new Date(b.finishDate);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
-  const thisYear = child.books.filter((b) => {
-    const d = new Date(b.dateRead);
+  const thisYear = child.books.filter((b: any) => {
+    if (!b.finishDate) return false;
+    const d = new Date(b.finishDate);
     return d.getFullYear() === now.getFullYear();
   }).length;
 
@@ -126,8 +128,9 @@ statsRoutes.get('/family/:familyId', async (c) => {
   for (let i = 5; i >= 0; i--) {
     const date = new Date();
     date.setMonth(date.getMonth() - i);
-    const monthBooks = allBooks.filter((b) => {
-      const d = new Date(b.dateRead);
+    const monthBooks = allBooks.filter((b: any) => {
+      if (!b.finishDate) return false;
+      const d = new Date(b.finishDate);
       return d.getMonth() === date.getMonth() && d.getFullYear() === date.getFullYear();
     });
     monthlyStats.push({
@@ -202,7 +205,7 @@ statsRoutes.get('/leaderboard/:familyId', async (c) => {
   const leaderboard = children
     .map((child) => {
       const filteredBooks = filterDate
-        ? child.books.filter((b) => new Date(b.dateRead) >= filterDate!)
+        ? child.books.filter((b: any) => b.finishDate && new Date(b.finishDate) >= filterDate!)
         : child.books;
 
       return {

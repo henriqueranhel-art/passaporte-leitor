@@ -43,24 +43,25 @@ export async function checkAndAwardAchievements(childId: string) {
         break;
 
       case 'genre_count':
-        const uniqueGenres = new Set(books.map((b) => b.genre));
+        const uniqueGenres = new Set(books.map((b: any) => b.genre));
         earned = uniqueGenres.size >= requirements.value;
         break;
 
       case 'genre_books':
-        const genreBooks = books.filter((b) => b.genre === requirements.genre);
+        const genreBooks = books.filter((b: any) => b.genre === requirements.genre);
         earned = genreBooks.length >= requirements.value;
         break;
 
       case 'rated_books':
-        const ratedBooks = books.filter((b) => b.rating !== null);
+        const ratedBooks = books.filter((b: any) => b.rating !== null);
         earned = ratedBooks.length >= requirements.value;
         break;
 
       case 'monthly_books':
         const now = new Date();
-        const thisMonthBooks = books.filter((b) => {
-          const d = new Date(b.dateRead);
+        const thisMonthBooks = books.filter((b: any) => {
+          if (!b.finishDate) return false;
+          const d = new Date(b.finishDate);
           return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
         });
         earned = thisMonthBooks.length >= requirements.value;
