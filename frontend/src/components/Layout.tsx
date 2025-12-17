@@ -32,30 +32,8 @@ export default function Layout() {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="space-y-2 flex-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) =>
-                clsx(
-                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all',
-                  isActive
-                    ? 'bg-background font-bold shadow-sm'
-                    : 'hover:bg-gray-50'
-                )
-              }
-            >
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-gray-800">{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
-
         {/* Family Info & Logout */}
-        <div className="p-4 rounded-xl bg-background mt-4">
+        <div className="p-4 rounded-xl bg-background mb-6">
           {family ? (
             <>
               <p className="text-xs text-gray-500 mb-1">👨‍👩‍👧‍👦 Família</p>
@@ -78,6 +56,28 @@ export default function Layout() {
             </button>
           )}
         </div>
+
+        {/* Navigation */}
+        <nav className="space-y-2">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              className={({ isActive }) =>
+                clsx(
+                  'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all',
+                  isActive
+                    ? 'bg-background font-bold shadow-sm'
+                    : 'hover:bg-gray-50'
+                )
+              }
+            >
+              <span className="text-xl">{item.icon}</span>
+              <span className="text-gray-800">{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
 
         {/* Tip */}
         <div className="p-4 rounded-xl bg-green-50 mt-4">

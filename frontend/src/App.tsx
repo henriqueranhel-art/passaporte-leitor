@@ -7,8 +7,8 @@ import { familyApi, childrenApi } from './lib/api';
 // Pages
 import AuthPage from './pages/Auth';
 import Dashboard from './pages/Dashboard';
+import Books from './pages/Books';
 import MapPage from './pages/Map';
-import BooksPage from './pages/Books';
 import AchievementsPage from './pages/Achievements';
 import PrintPage from './pages/Print';
 
@@ -104,9 +104,9 @@ export default function App() {
     <>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/livros" element={<Books />} />
           <Route path="mapa" element={<MapPage />} />
-          <Route path="livros" element={<BooksPage />} />
           <Route path="conquistas" element={<AchievementsPage />} />
           <Route path="imprimir" element={<PrintPage />} />
         </Route>

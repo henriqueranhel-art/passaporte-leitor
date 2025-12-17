@@ -2,6 +2,8 @@
 // ENUMS
 // ============================================================================
 
+export type LevelCategory = 'MAGIC' | 'EXPLORERS' | 'KNIGHTS' | 'SPACE';
+
 export type Genre =
   | 'FANTASIA'
   | 'AVENTURA'
@@ -32,7 +34,6 @@ export interface FamilySettings {
   id: string;
   familyId: string;
   language: string;
-  theme: string;
   notifications: boolean;
   weeklyReport: boolean;
 }
@@ -43,6 +44,7 @@ export interface Child {
   name: string;
   avatar: string;
   birthYear?: number;
+  levelCategory?: LevelCategory;
   createdAt: string;
   updatedAt: string;
 
@@ -254,15 +256,6 @@ export const GENRES: Record<Genre, { name: string; icon: string; theme: string; 
   CIENCIA: { name: 'Ciência', icon: '🔬', theme: 'Laboratório Secreto', color: '#1ABC9C', mapColor: '#A3E4D7' },
   HISTORIA: { name: 'História', icon: '📜', theme: 'Ruínas Antigas', color: '#795548', mapColor: '#D7CCC8' },
 };
-
-export const LEVELS: Level[] = [
-  { name: 'Grumete', minBooks: 0, icon: '🐣', color: '#BDC3C7' },
-  { name: 'Marinheiro', minBooks: 5, icon: '⚓', color: '#85C1E9' },
-  { name: 'Explorador', minBooks: 10, icon: '🧭', color: '#82E0AA' },
-  { name: 'Capitão', minBooks: 20, icon: '🎖️', color: '#F9E79F' },
-  { name: 'Almirante', minBooks: 35, icon: '👑', color: '#F5B041' },
-  { name: 'Lenda', minBooks: 50, icon: '⭐', color: '#AF7AC5' },
-];
 
 export const AVATARS = [
   // Row 1 - Pessoas

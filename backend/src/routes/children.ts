@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import prisma from '../lib/prisma.js';
+import { getCurrentLevel, getNextLevel, getLevelProgress, getBooksToNextLevel } from '../lib/levels-config.js';
 
 export const childRoutes = new Hono();
 
@@ -88,15 +89,16 @@ childRoutes.get('/family/:familyId', async (c) => {
 
   // Transform data for dashboard
   const enrichedChildren = (children as any[]).map(child => {
-    // 1. Calculate Level
-    // Simple logic for now based on book count
-    const bookCount = child._count.books;
-    const levelName = bookCount < 5 ? 'Grumete' : bookCount < 10 ? 'Marinheiro' : 'Explorador';
-    const levelIcon = bookCount < 5 ? '🐣' : bookCount < 10 ? '⚓' : '🧭';
-    const levelColor = bookCount < 5 ? '#BDC3C7' : bookCount < 10 ? '#85C1E9' : '#82E0AA';
-    const nextLevelBooks = bookCount < 5 ? 5 : bookCount < 10 ? 10 : 20;
-    const prevLevelBooks = bookCount < 5 ? 0 : bookCount < 10 ? 5 : 10;
-    const levelProgress = Math.min(100, Math.max(0, ((bookCount - prevLevelBooks) / (nextLevelBooks - prevLevelBooks)) * 100));
+    // 1. Calculate Level using levels-config
+
+    const levelCategory = child.levelCategory || 'EXPLORERS'; // Default to EXPLORERS
+    const finishedBooksCount = child.books.filter((b: any) => b.status === 'finished').length;
+
+    const currentLevel = getCurrentLevel(finishedBooksCount, levelCategory);
+    const nextLevel = getNextLevel(finishedBooksCount, levelCategory);
+    const progress = getLevelProgress(finishedBooksCount, levelCategory);
+    const booksToNext = getBooksToNextLevel(finishedBooksCount, levelCategory);
+
 
     // 2. Calculate Streak & Today's Reading
     // Sum all minutes from today's sessions
@@ -178,14 +180,14 @@ childRoutes.get('/family/:familyId', async (c) => {
     return {
       ...child,
       level: {
-        name: levelName,
-        color: levelColor,
-        icon: levelIcon,
-        nextLevel: 'Próximo Nível', // Simplified
-        booksToNextLevel: nextLevelBooks - bookCount,
-        progress: levelProgress
+        name: currentLevel.name,
+        color: currentLevel.color,
+        icon: currentLevel.icon,
+        nextLevel: nextLevel ? nextLevel.name : 'Nível Máximo',
+        booksToNextLevel: booksToNext,
+        progress: progress
       },
-      booksCount: bookCount,
+      booksCount: finishedBooksCount,
       streak, // Simplified
       todayReading: {
         minutes: todayMinutes,

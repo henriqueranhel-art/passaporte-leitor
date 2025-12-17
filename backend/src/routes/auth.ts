@@ -69,7 +69,6 @@ app.post('/register', async (c) => {
                     settings: {
                         create: {
                             language: 'pt-PT',
-                            theme: 'explorer',
                         },
                     },
                 },

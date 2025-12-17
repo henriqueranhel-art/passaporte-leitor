@@ -11,6 +11,28 @@ datasource db {
 }
 
 // ============================================================================
+// ENUMS
+// ============================================================================
+
+enum LevelCategory {
+  MAGIC
+  EXPLORERS
+  KNIGHTS
+  SPACE
+}
+
+enum Genre {
+  FANTASIA
+  AVENTURA
+  ESPACO
+  NATUREZA
+  MISTERIO
+  OCEANO
+  CIENCIA
+  HISTORIA
+}
+
+// ============================================================================
 // MODELOS PRINCIPAIS
 // ============================================================================
 
@@ -35,7 +57,6 @@ model FamilySettings {
 
   // Preferências
   language       String  @default("pt-PT")
-  theme          String  @default("explorer")
   notifications  Boolean @default(true)
   weeklyReport   Boolean @default(true)
 
@@ -46,20 +67,19 @@ model FamilySettings {
 }
 
 model Child {
-  id        String   @id @default(cuid())
-  familyId  String
-  family    Family   @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  
-  name      String
-  avatar    String   @default("🧒")
-  birthYear Int?     // Opcional, para recomendações
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String        @id @default(cuid())
+  familyId      String
+  name          String
+  avatar        String        @default("👦")
+  birthYear     Int?
+  levelCategory LevelCategory @default(EXPLORERS)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
-  books        Book[]
-  readingSessions ReadingSession[]
-  achievements ChildAchievement[]
+  family           Family            @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  books            Book[]
+  readingSessions  ReadingSession[]
+  achievements     ChildAchievement[]
 
   @@map("children")
 }
@@ -101,18 +121,19 @@ model Book {
 
 model Achievement {
   id          String @id @default(cuid())
-  code        String @unique // ex: "primeiro-livro", "cinco-livros"
+  code        String @unique
   name        String
   description String
   icon        String
   category    AchievementCategory @default(READING)
   
   // Requisitos (JSON para flexibilidade)
-  // ex: { "type": "book_count", "value": 5 }
-  // ex: { "type": "genre_count", "value": 3 }
-  requirements Json
+  requirements Json @default("{}")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  children ChildAchievement[]
+  childAchievements ChildAchievement[]
 
   @@map("achievements")
 }
@@ -128,21 +149,6 @@ model ChildAchievement {
 
   @@unique([childId, achievementId])
   @@map("child_achievements")
-}
-
-// ============================================================================
-// ENUMS
-// ============================================================================
-
-enum Genre {
-  FANTASIA   // 🏰 Reino Mágico
-  AVENTURA   // 🗺️ Terras Selvagens
-  ESPACO     // 🚀 Galáxia Infinita
-  NATUREZA   // 🌲 Floresta Encantada
-  MISTERIO   // 🔍 Vale das Sombras
-  OCEANO     // 🌊 Mar dos Piratas
-  CIENCIA    // 🔬 Laboratório Secreto
-  HISTORIA   // 📜 Ruínas Antigas
 }
 
 enum AchievementCategory {

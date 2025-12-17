@@ -50,7 +50,87 @@ const updateBookSchema = z.object({
   recommended: z.boolean().optional(),
 });
 
-// ... GET endpoints remain same ...
+// ============================================================================
+// GET /api/books/family/:familyId - List all books for a family
+// ============================================================================
+
+bookRoutes.get('/family/:familyId', async (c) => {
+  const { familyId } = c.req.param();
+
+  // Query parameters for filtering
+  const status = c.req.query('status'); // 'reading', 'to-read', 'finished', or undefined for all
+  const genre = c.req.query('genre'); // Genre enum value or undefined for all
+  const childId = c.req.query('childId'); // Specific child or undefined for all children
+  const search = c.req.query('search'); // Search by title or author
+  const sortBy = c.req.query('sortBy') || 'recent'; // 'recent', 'title', 'rating', 'progress'
+
+  // Build where clause
+  const where: any = {
+    child: {
+      familyId: familyId // Ensure we only get books for this family
+    }
+  };
+
+  // Filter by status
+  if (status && ['reading', 'to-read', 'finished'].includes(status)) {
+    where.status = status;
+  }
+
+  // Filter by genre
+  if (genre) {
+    where.genre = genre;
+  }
+
+  // Filter by child
+  if (childId) {
+    where.childId = childId;
+  }
+
+  // Filter by search (title or author)
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: 'insensitive' } },
+      { author: { contains: search, mode: 'insensitive' } }
+    ];
+  }
+
+  // Build orderBy clause
+  let orderBy: any = {};
+  switch (sortBy) {
+    case 'title':
+      orderBy = { title: 'asc' };
+      break;
+    case 'rating':
+      orderBy = { rating: 'desc' };
+      break;
+    case 'progress':
+      // Can't directly sort by progress (calculated field), will sort client-side
+      orderBy = { currentPage: 'desc' };
+      break;
+    case 'recent':
+    default:
+      orderBy = { updatedAt: 'desc' };
+      break;
+  }
+
+  const books = await prisma.book.findMany({
+    where,
+    orderBy,
+    include: {
+      child: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true
+        }
+      }
+    }
+  });
+
+  return c.json(books);
+});
+
+// ... POST endpoints follow ...
 
 // ============================================================================
 // POST /api/books - Adicionar novo livro

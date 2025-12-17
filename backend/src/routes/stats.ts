@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import prisma from '../lib/prisma.js';
-import { calculateLevel, getGenreStats } from '../services/achievements.js';
+import { getGenreStats } from '../services/achievements.js';
+import { getCurrentLevel, getNextLevel, getLevelProgress, getBooksToNextLevel } from '../lib/levels-config.js';
 
 export const statsRoutes = new Hono();
 
@@ -29,7 +30,20 @@ statsRoutes.get('/child/:childId', async (c) => {
   }
 
   const bookCount = child.books.length;
-  const level = calculateLevel(bookCount);
+  const finishedBooksCount = child.books.filter((b: any) => b.status === 'finished').length;
+  const levelCategory = child.levelCategory || 'EXPLORERS';
+
+  const currentLevel = getCurrentLevel(finishedBooksCount, levelCategory);
+  const nextLevel = getNextLevel(finishedBooksCount, levelCategory);
+  const progress = getLevelProgress(finishedBooksCount, levelCategory);
+  const booksToNext = getBooksToNextLevel(finishedBooksCount, levelCategory);
+
+  const level = {
+    current: currentLevel,
+    next: nextLevel,
+    progress,
+    booksToNextLevel: booksToNext
+  };
   const genreStats = await getGenreStats(childId);
 
   // Estatísticas de leitura
@@ -146,14 +160,28 @@ statsRoutes.get('/family/:familyId', async (c) => {
   }
 
   // Estatísticas por criança
-  const childStats = family.children.map((child) => ({
-    id: child.id,
-    name: child.name,
-    avatar: child.avatar,
-    bookCount: child.books.length,
-    achievementCount: child.achievements.length,
-    level: calculateLevel(child.books.length),
-  }));
+  const childStats = family.children.map((child) => {
+    const finishedCount = child.books.filter((b: any) => b.status === 'finished').length;
+    const childLevelCategory = child.levelCategory || 'EXPLORERS';
+    const childCurrentLevel = getCurrentLevel(finishedCount, childLevelCategory);
+    const childNextLevel = getNextLevel(finishedCount, childLevelCategory);
+    const childProgress = getLevelProgress(finishedCount, childLevelCategory);
+    const childBooksToNext = getBooksToNextLevel(finishedCount, childLevelCategory);
+
+    return {
+      id: child.id,
+      name: child.name,
+      avatar: child.avatar,
+      bookCount: finishedCount,
+      achievementCount: child.achievements.length,
+      level: {
+        current: childCurrentLevel,
+        next: childNextLevel,
+        progress: childProgress,
+        booksToNextLevel: childBooksToNext
+      }
+    };
+  });
 
   return c.json({
     family: {
@@ -208,12 +236,24 @@ statsRoutes.get('/leaderboard/:familyId', async (c) => {
         ? child.books.filter((b: any) => b.finishDate && new Date(b.finishDate) >= filterDate!)
         : child.books;
 
+      const childFinished = child.books.filter((b: any) => b.status === 'finished').length;
+      const childCategory = child.levelCategory || 'EXPLORERS';
+      const childCurLevel = getCurrentLevel(childFinished, childCategory);
+      const childNxtLevel = getNextLevel(childFinished, childCategory);
+      const childProg = getLevelProgress(childFinished, childCategory);
+      const childBksToNxt = getBooksToNextLevel(childFinished, childCategory);
+
       return {
         id: child.id,
         name: child.name,
         avatar: child.avatar,
-        bookCount: filteredBooks.length,
-        level: calculateLevel(child.books.length), // Nível sempre total
+        bookCount: filteredBooks.length, // Keep bookCount for sorting
+        level: {
+          current: childCurLevel,
+          next: childNxtLevel,
+          progress: childProg,
+          booksToNextLevel: childBksToNxt
+        }
       };
     })
     .sort((a, b) => b.bookCount - a.bookCount);

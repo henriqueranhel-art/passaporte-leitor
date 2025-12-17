@@ -128,6 +128,27 @@ export const childrenApi = {
 // ============================================================================
 
 export const booksApi = {
+  getByFamily: (
+    familyId: string,
+    filters?: {
+      status?: 'reading' | 'to-read' | 'finished';
+      genre?: string;
+      childId?: string;
+      search?: string;
+      sortBy?: 'recent' | 'title' | 'rating' | 'progress';
+    }
+  ) => {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.genre) params.append('genre', filters.genre);
+    if (filters?.childId) params.append('childId', filters.childId);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
+
+    const queryString = params.toString();
+    return request<Book[]>(`/books/family/${familyId}${queryString ? `?${queryString}` : ''}`);
+  },
+
   get: (id: string) => request<Book>(`/books/${id}`),
 
   getByChild: (childId: string, params?: { genre?: Genre; limit?: number; offset?: number }) => {
@@ -137,15 +158,6 @@ export const booksApi = {
     if (params?.offset) searchParams.set('offset', params.offset.toString());
     const query = searchParams.toString();
     return request<{ books: Book[]; total: number }>(`/books/child/${childId}${query ? `?${query}` : ''}`);
-  },
-
-  getByFamily: (familyId: string, params?: { genre?: Genre; limit?: number; offset?: number }) => {
-    const searchParams = new URLSearchParams();
-    if (params?.genre) searchParams.set('genre', params.genre);
-    if (params?.limit) searchParams.set('limit', params.limit.toString());
-    if (params?.offset) searchParams.set('offset', params.offset.toString());
-    const query = searchParams.toString();
-    return request<{ books: Book[]; total: number }>(`/books/family/${familyId}${query ? `?${query}` : ''}`);
   },
 
   create: (data: CreateBookInput) =>
