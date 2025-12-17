@@ -223,3 +223,33 @@ export const statsApi = {
 };
 
 export { ApiError };
+
+// ============================================================================
+// MAP API
+// ============================================================================
+
+interface MapChildData {
+  id: string;
+  name: string;
+  avatar: string;
+  rank: number;
+  todayMinutes: number;
+  dailyGoal: number;
+  totalReadingDays: number;
+  streak: number;
+  totalHours: number;
+}
+
+interface MapFamilyResponse {
+  family: {
+    id: string;
+    name: string;
+  };
+  children: MapChildData[];
+  aggregated: MapChildData;
+}
+
+export const mapApi = {
+  getChild: (childId: string) => request<MapChildData>(`/map/child/${childId}`),
+  getFamily: (familyId: string) => request<MapFamilyResponse>(`/map/family/${familyId}`),
+};

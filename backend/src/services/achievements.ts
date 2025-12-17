@@ -90,43 +90,6 @@ export async function checkAndAwardAchievements(childId: string) {
 }
 
 /**
- * Calcula o nível baseado no número de livros
- */
-export function calculateLevel(bookCount: number) {
-  const levels = [
-    { name: 'Grumete', minBooks: 0, icon: '🐣', color: '#BDC3C7' },
-    { name: 'Marinheiro', minBooks: 5, icon: '⚓', color: '#85C1E9' },
-    { name: 'Explorador', minBooks: 10, icon: '🧭', color: '#82E0AA' },
-    { name: 'Capitão', minBooks: 20, icon: '🎖️', color: '#F9E79F' },
-    { name: 'Almirante', minBooks: 35, icon: '👑', color: '#F5B041' },
-    { name: 'Lenda', minBooks: 50, icon: '⭐', color: '#AF7AC5' },
-  ];
-
-  for (let i = levels.length - 1; i >= 0; i--) {
-    if (bookCount >= levels[i].minBooks) {
-      const currentLevel = levels[i];
-      const nextLevel = levels[i + 1] || null;
-
-      return {
-        current: currentLevel,
-        next: nextLevel,
-        progress: nextLevel
-          ? ((bookCount - currentLevel.minBooks) / (nextLevel.minBooks - currentLevel.minBooks)) * 100
-          : 100,
-        booksToNextLevel: nextLevel ? nextLevel.minBooks - bookCount : 0,
-      };
-    }
-  }
-
-  return {
-    current: levels[0],
-    next: levels[1],
-    progress: 0,
-    booksToNextLevel: levels[1].minBooks,
-  };
-}
-
-/**
  * Obtém estatísticas de géneros para uma criança
  */
 export async function getGenreStats(childId: string) {

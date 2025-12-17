@@ -11,6 +11,7 @@ import { achievementRoutes } from './routes/achievements.js';
 import { statsRoutes } from './routes/stats.js';
 import { authRoutes } from './routes/auth.js';
 import { readingLogRoutes } from './routes/reading-logs.js';
+import { mapRoutes } from './routes/map.js';
 
 const app = new Hono();
 
@@ -71,6 +72,7 @@ api.route('/books', bookRoutes);
 api.route('/achievements', achievementRoutes);
 api.route('/stats', statsRoutes);
 api.route('/reading-logs', readingLogRoutes);
+api.route('/map', mapRoutes);
 
 app.route('/api', api);
 

@@ -106,9 +106,9 @@ export default function App() {
         <Route path="/" element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/livros" element={<Books />} />
-          <Route path="mapa" element={<MapPage />} />
-          <Route path="conquistas" element={<AchievementsPage />} />
-          <Route path="imprimir" element={<PrintPage />} />
+          <Route path="/mapa" element={<MapPage />} />
+          <Route path="/conquistas" element={<AchievementsPage />} />
+          <Route path="/imprimir" element={<PrintPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/auth" element={<Navigate to="/" replace />} />
