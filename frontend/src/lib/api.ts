@@ -228,6 +228,14 @@ export { ApiError };
 // MAP API
 // ============================================================================
 
+interface LevelInfo {
+  rank: number;
+  name: string;
+  minBooks: number;
+  icon: string;
+  color: string;
+}
+
 interface MapChildData {
   id: string;
   name: string;
@@ -238,6 +246,9 @@ interface MapChildData {
   totalReadingDays: number;
   streak: number;
   totalHours: number;
+  levelCategory: string;
+  currentLevel: LevelInfo;
+  nextLevel: LevelInfo | null;
 }
 
 interface MapFamilyResponse {
@@ -246,7 +257,7 @@ interface MapFamilyResponse {
     name: string;
   };
   children: MapChildData[];
-  aggregated: MapChildData;
+  aggregated: MapChildData & { levelCategory: string };
 }
 
 export const mapApi = {

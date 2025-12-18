@@ -7,6 +7,14 @@ import { mapApi } from '../lib/api';
 // TYPES
 // ============================================================================
 
+interface LevelInfo {
+  rank: number;
+  name: string;
+  minBooks: number;
+  icon: string;
+  color: string;
+}
+
 interface ChildData {
   id: string;
   name: string;
@@ -17,6 +25,9 @@ interface ChildData {
   totalReadingDays: number;
   streak: number;
   totalHours: number;
+  levelCategory: string;
+  currentLevel: LevelInfo;
+  nextLevel: LevelInfo | null;
 }
 
 interface MapResponse {
@@ -25,7 +36,7 @@ interface MapResponse {
     name: string;
   };
   children: ChildData[];
-  aggregated: ChildData;
+  aggregated: ChildData & { levelCategory: string };
 }
 
 // ============================================================================
@@ -40,15 +51,27 @@ const COLORS = {
   text: '#2C3E50',
 };
 
-// Níveis (exemplo: Exploradores)
-const LEVELS = [
-  { rank: 1, name: 'Curioso', minBooks: 0, icon: '🐣', color: '#BDC3C7' },
-  { rank: 2, name: 'Explorador', minBooks: 3, icon: '🧭', color: '#85C1E9' },
-  { rank: 3, name: 'Aventureiro', minBooks: 7, icon: '🎒', color: '#82E0AA' },
-  { rank: 4, name: 'Descobridor', minBooks: 12, icon: '🗺️', color: '#F9E79F' },
-  { rank: 5, name: 'Navegador', minBooks: 20, icon: '⛵', color: '#F5B041' },
-  { rank: 6, name: 'Lenda', minBooks: 30, icon: '🌟', color: '#AF7AC5' },
-];
+// Visualization limits based on progression milestones
+const MAX_FISH_COUNT = 50;  // Number of books in the last level
+const MAX_STARS_COUNT = 80; // Cap for star visualization
+
+// ============================================================================
+// SHARED INTERFACES
+// ============================================================================
+
+interface MapVisualizationProps {
+  rank?: number;
+  todayMinutes?: number;
+  dailyGoal?: number;
+  totalReadingDays?: number;
+  streak?: number;
+  totalHours?: number;
+  childName?: string | null;
+  isFamily?: boolean;
+  currentLevel?: LevelInfo;
+}
+
+
 
 // ============================================================================
 // CHILD SELECTOR
@@ -192,24 +215,16 @@ const LivingAquarium = ({
   streak = 7,
   totalHours = 32,
   childName = null,
-
-}: {
-  rank?: number;
-  todayMinutes?: number;
-  dailyGoal?: number;
-  totalReadingDays?: number;
-  streak?: number;
-  totalHours?: number;
-  childName?: string | null;
-  isFamily?: boolean;
-}) => {
-  const currentLevel = LEVELS[rank - 1] || LEVELS[0];
+  currentLevel,
+}: MapVisualizationProps) => {
+  // Fallback level if not provided
+  const level = currentLevel || { rank: 1, name: 'Iniciante', minBooks: 0, icon: '🐣', color: '#BDC3C7' };
   const goalMet = todayMinutes >= dailyGoal;
 
   // Peixes baseados em dias totais de leitura
   const fish = [];
   const fishTypes = ['🐟', '🐠', '🐡'];
-  for (let i = 0; i < Math.min(totalReadingDays, 50); i++) {
+  for (let i = 0; i < Math.min(totalReadingDays, MAX_FISH_COUNT); i++) {
     fish.push({
       type: fishTypes[i % 3],
       x: Math.random() * 80 + 10,
@@ -278,10 +293,10 @@ const LivingAquarium = ({
 
         {/* Rank badge */}
         <div className="absolute top-3 left-4 flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-xl px-3 py-2">
-          <span className="text-2xl">{currentLevel.icon}</span>
+          <span className="text-2xl">{level.icon}</span>
           <div>
             <p className="text-xs text-white/80">Rank {rank}</p>
-            <p className="text-sm font-bold text-white">{currentLevel.name}</p>
+            <p className="text-sm font-bold text-white">{level.name}</p>
           </div>
         </div>
 
@@ -454,23 +469,15 @@ const ConstellationMap = ({
   streak = 7,
   totalHours = 32,
   childName = null,
-
-}: {
-  rank?: number;
-  todayMinutes?: number;
-  dailyGoal?: number;
-  totalReadingDays?: number;
-  streak?: number;
-  totalHours?: number;
-  childName?: string | null;
-  isFamily?: boolean;
-}) => {
-
+  currentLevel,
+}: MapVisualizationProps) => {
+  // Fallback level if not provided
+  const level = currentLevel || { rank: 1, name: 'Iniciante', minBooks: 0, icon: '⭐', color: '#BDC3C7' };
   const goalMet = todayMinutes >= dailyGoal;
 
   // Estrelas baseadas em dias totais de leitura
   const stars = [];
-  for (let i = 0; i < Math.min(totalReadingDays, 80); i++) {
+  for (let i = 0; i < Math.min(totalReadingDays, MAX_STARS_COUNT); i++) {
     stars.push({
       x: 5 + Math.random() * 90,
       y: 8 + Math.random() * 60,
@@ -481,12 +488,12 @@ const ConstellationMap = ({
 
   // Constelação baseada no rank (forma diferente por rank)
   const constellationsByRank = [
-    { name: 'Semente', points: [[50, 45]], icon: '🌱' },
-    { name: 'Broto', points: [[45, 50], [50, 38], [55, 50]], icon: '🌿' },
-    { name: 'Flor', points: [[45, 45], [50, 32], [55, 45], [50, 55]], icon: '🌸' },
-    { name: 'Árvore', points: [[45, 55], [50, 38], [55, 55], [47, 46], [53, 46]], icon: '🌳' },
-    { name: 'Floresta', points: [[40, 55], [45, 38], [50, 50], [55, 38], [60, 55], [50, 28]], icon: '🏔️' },
-    { name: 'Universo', points: [[35, 50], [42, 32], [50, 45], [58, 32], [65, 50], [50, 22], [50, 60]], icon: '✨' },
+    { points: [[50, 45]], icon: '⭐' }, // rank 1 - single star
+    { points: [[45, 50], [50, 38], [55, 50]], icon: '�' }, // rank 2 - crescent
+    { points: [[45, 45], [50, 32], [55, 45], [50, 55]], icon: '☄️' }, // rank 3 - comet
+    { points: [[45, 55], [50, 38], [55, 55], [47, 46], [53, 46]], icon: '🪐' }, // rank 4 - planet
+    { points: [[40, 55], [45, 38], [50, 50], [55, 38], [60, 55], [50, 28]], icon: '🚀' }, // rank 5 - rocket
+    { points: [[35, 50], [42, 32], [50, 45], [58, 32], [65, 50], [50, 22], [50, 60]], icon: '🌌' }, // rank 6 - galaxy
   ];
   const constellation = constellationsByRank[rank - 1] || constellationsByRank[0];
 
@@ -626,7 +633,7 @@ const ConstellationMap = ({
             }}
           >
             <span className="text-lg">{constellation.icon}</span>
-            <span className="text-sm font-bold text-yellow-200">{constellation.name}</span>
+            <span className="text-sm font-bold text-yellow-200">{level.name}</span>
             <span className="text-xs text-yellow-300/70">Rank {rank}</span>
           </div>
         </div>
@@ -700,6 +707,9 @@ const FamilyAquarium = ({ children }: { children: ChildData[] }) => {
   const totalHours = children.reduce((sum: number, c: ChildData) => sum + c.totalHours, 0);
   const avgRank = Math.round(children.reduce((sum: number, c: ChildData) => sum + c.rank, 0) / children.length);
 
+  // Use the first child's level as representative (or could build an aggregate level)
+  const representativeLevel = children[0]?.currentLevel;
+
   return (
     <LivingAquarium
       rank={avgRank}
@@ -709,6 +719,7 @@ const FamilyAquarium = ({ children }: { children: ChildData[] }) => {
       streak={maxStreak}
       totalHours={totalHours}
       isFamily={true}
+      currentLevel={representativeLevel}
     />
   );
 };
@@ -721,6 +732,9 @@ const FamilyConstellation = ({ children }: { children: ChildData[] }) => {
   const totalHours = children.reduce((sum: number, c: ChildData) => sum + c.totalHours, 0);
   const avgRank = Math.round(children.reduce((sum: number, c: ChildData) => sum + c.rank, 0) / children.length);
 
+  // Use the first child's level as representative
+  const representativeLevel = children[0]?.currentLevel;
+
   return (
     <ConstellationMap
       rank={avgRank}
@@ -730,6 +744,7 @@ const FamilyConstellation = ({ children }: { children: ChildData[] }) => {
       streak={maxStreak}
       totalHours={totalHours}
       isFamily={true}
+      currentLevel={representativeLevel}
     />
   );
 };
@@ -867,6 +882,7 @@ export default function ExplorerMapPage() {
               streak={selectedChild.streak}
               totalHours={selectedChild.totalHours}
               childName={selectedChild.name}
+              currentLevel={selectedChild.currentLevel}
             />
           ) : null
         ) : (
@@ -881,6 +897,7 @@ export default function ExplorerMapPage() {
               streak={selectedChild.streak}
               totalHours={selectedChild.totalHours}
               childName={selectedChild.name}
+              currentLevel={selectedChild.currentLevel}
             />
           ) : null
         )}
@@ -895,7 +912,6 @@ export default function ExplorerMapPage() {
               Por criança
             </h3>
             {children.map((child: ChildData) => {
-              const level = LEVELS[child.rank - 1];
               const goalMet = child.todayMinutes >= child.dailyGoal;
               return (
                 <div
@@ -907,7 +923,7 @@ export default function ExplorerMapPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-bold" style={{ color: COLORS.text }}>{child.name}</span>
-                      <span className="text-sm">{level.icon} {level.name}</span>
+                      <span className="text-sm">{child.currentLevel.icon} {child.currentLevel.name}</span>
                       {goalMet && <span className="text-sm">✅</span>}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">

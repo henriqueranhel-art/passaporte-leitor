@@ -1,8 +1,15 @@
 import { Hono } from 'hono';
 import prisma from '../lib/prisma.js';
-import { getCurrentLevel } from '../lib/levels-config.js';
+import { getCurrentLevel, getNextLevel, LEVEL_CATEGORIES } from '../lib/levels-config.js';
+import { getAuthFamilyId } from '../middleware/auth.js';
 
 export const mapRoutes = new Hono();
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const DEFAULT_DAILY_GOAL_MINUTES = 15;
 
 // ============================================================================
 // HELPER: Calculate Streak
@@ -48,35 +55,42 @@ async function calculateStreak(childId: string): Promise<number> {
 }
 
 // ============================================================================
-// GET /api/map/child/:childId - Map data for a child
+// HELPER: Calculate Child Stats
 // ============================================================================
 
-mapRoutes.get('/child/:childId', async (c) => {
-    const { childId } = c.req.param();
+interface ChildStatsInput {
+    books: any[];
+    readingSessions: any[];
+    id: string;
+    levelCategory: string;
+}
 
-    // Get child with books and sessions
-    const child = await prisma.child.findUnique({
-        where: { id: childId },
-        include: {
-            books: {
-                where: { status: 'finished' },
-            },
-            readingSessions: {
-                select: {
-                    date: true,
-                    minutes: true,
-                },
-            },
-        },
-    });
+interface ChildStatsOutput {
+    rank: number;
+    todayMinutes: number;
+    totalReadingDays: number;
+    streak: number;
+    totalHours: number;
+    levelCategory: string;
+    currentLevel: {
+        rank: number;
+        name: string;
+        minBooks: number;
+        icon: string;
+        color: string;
+    };
+    nextLevel: {
+        rank: number;
+        name: string;
+        minBooks: number;
+        icon: string;
+        color: string;
+    } | null;
+}
 
-    if (!child) {
-        return c.json({ error: 'Child not found' }, 404);
-    }
-
-    // Calculate rank
+async function calculateChildStats(child: ChildStatsInput): Promise<ChildStatsOutput> {
     const finishedBooksCount = child.books.length;
-    const levelCategory = child.levelCategory || 'EXPLORERS';
+    const levelCategory = (child.levelCategory || 'EXPLORERS') as any;
     const currentLevel = getCurrentLevel(finishedBooksCount, levelCategory);
     const rank = currentLevel.rank;
 
@@ -102,7 +116,7 @@ mapRoutes.get('/child/:childId', async (c) => {
     const totalReadingDays = uniqueDates.size;
 
     // Calculate streak
-    const streak = await calculateStreak(childId);
+    const streak = await calculateStreak(child.id);
 
     // Calculate total hours
     const totalMinutes = child.readingSessions.reduce(
@@ -111,18 +125,88 @@ mapRoutes.get('/child/:childId', async (c) => {
     );
     const totalHours = Math.round(totalMinutes / 60);
 
+    const nextLevel = getNextLevel(finishedBooksCount, levelCategory);
+
+    return {
+        rank,
+        todayMinutes,
+        totalReadingDays,
+        streak,
+        totalHours,
+        levelCategory,
+        currentLevel: {
+            rank: currentLevel.rank,
+            name: currentLevel.name,
+            minBooks: currentLevel.minBooks,
+            icon: currentLevel.icon,
+            color: currentLevel.color,
+        },
+        nextLevel: nextLevel ? {
+            rank: nextLevel.rank,
+            name: nextLevel.name,
+            minBooks: nextLevel.minBooks,
+            icon: nextLevel.icon,
+            color: nextLevel.color,
+        } : null,
+    };
+}
+
+// ============================================================================
+// GET /api/map/child/:childId - Map data for a child
+// ============================================================================
+
+mapRoutes.get('/child/:childId', async (c) => {
+    const { childId } = c.req.param();
+
+    // SECURITY: Get authenticated family ID from JWT token
+    const familyId = getAuthFamilyId(c);
+
+    // SECURITY: Query child with familyId to ensure it belongs to authenticated family
+    const child = await prisma.child.findFirst({
+        where: {
+            id: childId,
+            familyId: familyId, // Critical: Ensure child belongs to this family
+        },
+        include: {
+            books: {
+                where: { status: 'finished' },
+            },
+            readingSessions: {
+                select: {
+                    date: true,
+                    minutes: true,
+                },
+            },
+        },
+    });
+
+    if (!child) {
+        return c.json({ error: 'Child not found or access denied' }, 404);
+    }
+
+    // Calculate stats using helper function
+    const stats = await calculateChildStats({
+        books: child.books,
+        readingSessions: child.readingSessions,
+        id: child.id,
+        levelCategory: child.levelCategory,
+    });
+
     return c.json({
         child: {
             id: child.id,
             name: child.name,
             avatar: child.avatar,
         },
-        rank,
-        todayMinutes,
-        dailyGoal: 15, // Hardcoded for now
-        totalReadingDays,
-        streak,
-        totalHours,
+        rank: stats.rank,
+        todayMinutes: stats.todayMinutes,
+        dailyGoal: DEFAULT_DAILY_GOAL_MINUTES,
+        totalReadingDays: stats.totalReadingDays,
+        streak: stats.streak,
+        totalHours: stats.totalHours,
+        levelCategory: stats.levelCategory,
+        currentLevel: stats.currentLevel,
+        nextLevel: stats.nextLevel,
     });
 });
 
@@ -191,6 +275,7 @@ mapRoutes.get('/family/:familyId', async (c) => {
                 0
             );
             const totalHours = Math.round(totalMinutes / 60);
+            const nextLevel = getNextLevel(finishedBooksCount, levelCategory);
 
             return {
                 id: child.id,
@@ -198,24 +283,49 @@ mapRoutes.get('/family/:familyId', async (c) => {
                 avatar: child.avatar,
                 rank,
                 todayMinutes,
-                dailyGoal: 15,
+                dailyGoal: DEFAULT_DAILY_GOAL_MINUTES,
                 totalReadingDays,
                 streak,
                 totalHours,
+                levelCategory,
+                currentLevel: {
+                    rank: currentLevel.rank,
+                    name: currentLevel.name,
+                    minBooks: currentLevel.minBooks,
+                    icon: currentLevel.icon,
+                    color: currentLevel.color,
+                },
+                nextLevel: nextLevel ? {
+                    rank: nextLevel.rank,
+                    name: nextLevel.name,
+                    minBooks: nextLevel.minBooks,
+                    icon: nextLevel.icon,
+                    color: nextLevel.color,
+                } : null,
             };
         })
     );
 
     // Aggregate stats
+    // Find most common levelCategory for family view
+    const categoryCount: Record<string, number> = {};
+    childrenStats.forEach((c: any) => {
+        categoryCount[c.levelCategory] = (categoryCount[c.levelCategory] || 0) + 1;
+    });
+    const familyLevelCategory = Object.entries(categoryCount).reduce((a, b) => a[1] > b[1] ? a : b)[0] as any;
+
+    const avgRank = Math.round(
+        childrenStats.reduce((sum, c) => sum + c.rank, 0) / childrenStats.length
+    );
+
     const aggregated = {
-        rank: Math.round(
-            childrenStats.reduce((sum, c) => sum + c.rank, 0) / childrenStats.length
-        ),
+        rank: avgRank,
         todayMinutes: childrenStats.reduce((sum, c) => sum + c.todayMinutes, 0),
         dailyGoal: childrenStats.reduce((sum, c) => sum + c.dailyGoal, 0),
         totalReadingDays: childrenStats.reduce((sum, c) => sum + c.totalReadingDays, 0),
         streak: Math.max(...childrenStats.map((c) => c.streak)),
         totalHours: childrenStats.reduce((sum, c) => sum + c.totalHours, 0),
+        levelCategory: familyLevelCategory,
     };
 
     return c.json({
