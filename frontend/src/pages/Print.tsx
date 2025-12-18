@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useSelectedChild, useChildren } from '../lib/store';
+import { useSelectedChild, useChildren, useStore } from '../lib/store';
 import { statsApi, booksApi } from '../lib/api';
 import { Card, Button, Modal } from '../components/ui';
+import { GENRES } from '../lib/types';
 
 export default function PrintPage() {
   const children = useChildren();
   const selectedChild = useSelectedChild();
+  const { setSelectedChild } = useStore();
   const [showCertificate, setShowCertificate] = useState(false);
   const [showPassport, setShowPassport] = useState(false);
 
@@ -24,7 +26,8 @@ export default function PrintPage() {
     enabled: !!child,
   });
 
-  const books = booksData?.books || [];
+  // Only show finished books in the passport
+  const books = (booksData?.books || []).filter((book: any) => book.status === 'finished');
 
   const printItems = [
     {
@@ -60,9 +63,10 @@ export default function PrintPage() {
             {children.map((c) => (
               <button
                 key={c.id}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl ${child?.id === c.id
-                    ? 'ring-2 ring-primary bg-primary/10'
-                    : 'bg-gray-100'
+                onClick={() => setSelectedChild(c.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all hover:opacity-80 cursor-pointer ${child?.id === c.id
+                  ? 'ring-2 ring-primary bg-primary/10'
+                  : 'bg-gray-100'
                   }`}
               >
                 <span className="text-2xl">{c.avatar}</span>
@@ -166,7 +170,7 @@ function CertificateModal({
         </p>
 
         <div className="px-8 py-3 rounded-full bg-success text-white font-bold text-lg mb-6">
-          🎉 {stats?.books.total || 0} Livros Lidos!
+          🎉 {stats?.books.read || 0} Livros Lidos!
         </div>
 
         <p className="text-sm text-gray-500">
@@ -210,17 +214,6 @@ function PassportModal({
 }) {
   const handlePrint = () => window.print();
 
-  const GENRES: Record<string, { icon: string; color: string; mapColor: string }> = {
-    FANTASIA: { icon: '🏰', color: '#9B59B6', mapColor: '#D7BDE2' },
-    AVENTURA: { icon: '🗺️', color: '#E67E22', mapColor: '#F5CBA7' },
-    ESPACO: { icon: '🚀', color: '#2C3E50', mapColor: '#85929E' },
-    NATUREZA: { icon: '🌲', color: '#27AE60', mapColor: '#ABEBC6' },
-    MISTERIO: { icon: '🔍', color: '#34495E', mapColor: '#ABB2B9' },
-    OCEANO: { icon: '🌊', color: '#3498DB', mapColor: '#AED6F1' },
-    CIENCIA: { icon: '🔬', color: '#1ABC9C', mapColor: '#A3E4D7' },
-    HISTORIA: { icon: '📜', color: '#795548', mapColor: '#D7CCC8' },
-  };
-
   return (
     <Modal isOpen onClose={onClose} title="📖 Página do Passaporte" size="lg">
       {/* Passport Preview */}
@@ -246,7 +239,7 @@ function PassportModal({
         <div className="grid grid-cols-3 gap-3">
           {Array.from({ length: 6 }).map((_, i) => {
             const book = books[i];
-            const genre = book ? GENRES[book.genre] : null;
+            const genre = book ? GENRES[book.genre as keyof typeof GENRES] : null;
 
             return (
               <div
@@ -263,9 +256,11 @@ function PassportModal({
                     <p className="text-xs font-bold text-center line-clamp-2 text-gray-800">
                       {book.title}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {new Date(book.dateRead).toLocaleDateString('pt-PT')}
-                    </p>
+                    {book.finishDate && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(book.finishDate).toLocaleDateString('pt-PT')}
+                      </p>
+                    )}
                   </>
                 ) : (
                   <>

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { GENRES, type Child } from '../lib/types';
+import { useState } from 'react';
+import { GENRES, type Child, type LevelCategory } from '../lib/types';
+import { THEME_CONFIG } from '../lib/themeConfig';
 
 // ============================================================================
 // DESIGN TOKENS
-// ============================================================================
+// ==================================================== ========================
 
 const COLORS = {
     primary: '#E67E22',
@@ -21,6 +22,7 @@ const COLORS = {
     border: '#E8E0D5',
     streak: '#FF6B35',
 };
+
 
 // ============================================================================
 // SUB-COMPONENTS
@@ -56,15 +58,6 @@ const ProgressRing = ({ progress, size = 60, strokeWidth = 6, color = COLORS.pri
         </svg>
     );
 };
-
-const Badge = ({ children, color = COLORS.primary, small = false }: { children: React.ReactNode; color?: string; small?: boolean }) => (
-    <span
-        className={`inline-flex items-center gap-1 rounded-full font-bold text-white ${small ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'}`}
-        style={{ backgroundColor: color }}
-    >
-        {children}
-    </span>
-);
 
 const WeekCalendar = ({ sessions }: { sessions: Child['weeklyActivity'] }) => {
     return (
@@ -193,15 +186,18 @@ export interface ChildCardProps {
 export function ChildCard({ child, onAddBook, onLogReading, onViewDetails }: ChildCardProps) {
     const [showAllBooks, setShowAllBooks] = useState(false);
 
+    const levelCategory = (child.levelCategory || 'EXPLORERS') as LevelCategory;
+    const theme = THEME_CONFIG[levelCategory];
     const levelProgress = child.level.progress;
     const dailyProgress = Math.min(
         Math.round((child.todayReading.minutes / child.todayReading.goal) * 100),
         100
     );
 
+    const bookSlice = 1;
     const goalComplete = child.todayReading.minutes >= child.todayReading.goal;
     const hasCurrentBooks = child.currentBooks && child.currentBooks.length > 0;
-    const displayedBooks = showAllBooks ? child.currentBooks : child.currentBooks?.slice(0, 2);
+    const displayedBooks = showAllBooks ? child.currentBooks : child.currentBooks?.slice(0, bookSlice);
 
     return (
         <div
@@ -209,64 +205,63 @@ export function ChildCard({ child, onAddBook, onLogReading, onViewDetails }: Chi
             style={{ backgroundColor: COLORS.card, borderColor: COLORS.border }}
         >
             {/* ================================================================== */}
-            {/* HEADER */}
+            {/* THEMED HEADER */}
             {/* ================================================================== */}
-            <div
-                className="p-5 relative"
-                style={{ background: `linear-gradient(135deg, ${child.level.color}40 0%, ${child.level.color}20 100%)` }}
-            >
-                <div className="flex items-start gap-4">
+            <div className="relative overflow-hidden" style={{ background: theme.gradient }}>
+                {/* Background Elements */}
+                <theme.BackgroundElements />
+
+                {/* Content */}
+                <div className="relative z-10 p-5 flex items-start gap-4">
                     <div className="relative">
                         <div
-                            className="rounded-2xl flex items-center justify-center text-4xl shadow-lg"
-                            style={{ backgroundColor: child.level.color, width: '72px', height: '72px' }}
+                            className="w-18 h-18 rounded-2xl flex items-center justify-center text-4xl shadow-lg bg-white/20 backdrop-blur-sm"
+                            style={{ width: '72px', height: '72px' }}
                         >
                             {child.avatar}
                         </div>
                     </div>
 
                     <div className="flex-1 min-w-0">
-                        <h3 className="text-xl font-bold mb-1" style={{ color: COLORS.text }}>
+                        <h3 className="text-xl font-bold mb-1 text-white">
                             {child.name}
                         </h3>
 
                         <div className="flex items-center gap-2 mb-2">
-                            <Badge color={COLORS.primary}>
+                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-white/90" style={{ color: theme.badgeTextColor }}>
                                 {child.level.icon} {child.level.name}
-                            </Badge>
-                            <span className="text-sm text-gray-500">
+                            </span>
+                            <span className="text-sm text-white/90">
                                 {child.booksCount} livros
                             </span>
                         </div>
 
                         <div>
                             <div className="flex justify-between text-xs mb-1">
-                                <span className="text-gray-500">Próximo: {child.level.nextLevel}</span>
-                                <span style={{ color: COLORS.primary }}>{child.level.booksToNextLevel} livros</span>
+                                <span className="text-white/70">Próximo: {child.level.nextLevel}</span>
+                                <span className="text-white font-medium">{child.level.booksToNextLevel} livros</span>
                             </div>
-                            <div className="h-2 bg-white/60 rounded-full overflow-hidden">
+                            <div className="h-2 bg-white/30 rounded-full overflow-hidden">
                                 <div
-                                    className="h-full rounded-full transition-all duration-500"
-                                    style={{ width: `${levelProgress}%`, backgroundColor: COLORS.primary }}
+                                    className="h-full rounded-full transition-all duration-500 bg-white"
+                                    style={{ width: `${levelProgress}%` }}
                                 />
                             </div>
                         </div>
                     </div>
 
                     <div
-                        className="flex flex-col items-center p-3 rounded-xl min-w-[70px]"
-                        style={{ backgroundColor: child.streak > 0 ? `${COLORS.streak}15` : '#F9FAFB' }}
+                        className="flex flex-col items-center px-3 py-2 rounded-xl min-w-[70px] bg-white/20 backdrop-blur-sm"
                     >
                         <div className="flex items-center gap-1">
                             <span className="text-2xl">{child.streak > 0 ? '🔥' : '💤'}</span>
                             <span
-                                className="text-2xl font-bold"
-                                style={{ color: child.streak > 0 ? COLORS.streak : '#9CA3AF' }}
+                                className="text-2xl font-bold text-white"
                             >
                                 {child.streak}
                             </span>
                         </div>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-white/70">
                             {child.streak === 1 ? 'dia' : 'dias'}
                         </span>
                     </div>
@@ -362,16 +357,16 @@ export function ChildCard({ child, onAddBook, onLogReading, onViewDetails }: Chi
                             <CurrentBookMini key={book.id} book={book} />
                         ))}
 
-                        {child.currentBooks.length > 2 && !showAllBooks && (
+                        {child.currentBooks.length > bookSlice && !showAllBooks && (
                             <button
                                 onClick={() => setShowAllBooks(true)}
                                 className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
                             >
-                                Ver mais {child.currentBooks.length - 2} livros...
+                                Ver mais {child.currentBooks.length - 1} livros...
                             </button>
                         )}
 
-                        {showAllBooks && child.currentBooks.length > 2 && (
+                        {showAllBooks && child.currentBooks.length > bookSlice && (
                             <button
                                 onClick={() => setShowAllBooks(false)}
                                 className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
@@ -384,13 +379,6 @@ export function ChildCard({ child, onAddBook, onLogReading, onViewDetails }: Chi
                     <div className="text-center py-6 bg-gray-50 rounded-xl">
                         <span className="text-3xl mb-2 block">📚</span>
                         <p className="text-gray-500 text-sm mb-3">Nenhum livro em progresso</p>
-                        <button
-                            onClick={onAddBook}
-                            className="px-4 py-2 rounded-lg text-sm font-medium text-white"
-                            style={{ backgroundColor: COLORS.secondary }}
-                        >
-                            + Começar um livro
-                        </button>
                     </div>
                 )}
             </div>

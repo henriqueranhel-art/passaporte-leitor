@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { booksApi, childrenApi } from '../lib/api';
 import { useFamilyId } from '../lib/store';
 import type { Book, Child } from '../lib/types';
+import { GENRES } from '../lib/types';
 import { Modal } from '../components/ui';
 
 // ============================================================================
@@ -23,17 +24,6 @@ const COLORS = {
   textLight: '#7F8C8D',
   border: '#E8E0D5',
 };
-
-export const GENRES = {
-  FANTASIA: { name: 'Fantasia', icon: '🏰', color: '#9B59B6' },
-  AVENTURA: { name: 'Aventura', icon: '🗺️', color: '#E67E22' },
-  ESPACO: { name: 'Espaço', icon: '🚀', color: '#2C3E50' },
-  NATUREZA: { name: 'Natureza', icon: '🌲', color: '#27AE60' },
-  MISTERIO: { name: 'Mistério', icon: '🔍', color: '#34495E' },
-  OCEANO: { name: 'Oceano', icon: '🌊', color: '#3498DB' },
-  HISTORIA: { name: 'História', icon: '📜', color: '#795548' },
-  CIENCIA: { name: 'Ciência', icon: '🔬', color: '#00BCD4' },
-} as const;
 
 export const STATUS_CONFIG = {
   'reading': { label: 'A Ler', icon: '📖', color: COLORS.secondary, bgColor: `${COLORS.secondary}20` },
@@ -351,6 +341,73 @@ const CompactBookCard = ({ book, onClick, showChild, children }: CompactBookCard
 // ============================================================================
 
 const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Editable fields state
+  const [editTitle, setEditTitle] = useState(book?.title || '');
+  const [editAuthor, setEditAuthor] = useState(book?.author || '');
+  const [editGenre, setEditGenre] = useState<GenreFilter>(book?.genre as GenreFilter || 'FANTASIA');
+  const [editStartDate, setEditStartDate] = useState(book?.startDate || '');
+  const [editTotalPages, setEditTotalPages] = useState(book?.totalPages?.toString() || '');
+  const [errors, setErrors] = useState<any>({});
+
+  // Update mutations
+  const updateBookMutation = useMutation({
+    mutationFn: (data: any) => booksApi.update(book!.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['childBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['familyStats'] });
+      setIsEditing(false);
+      onClose();
+    },
+  });
+
+  const deleteBookMutation = useMutation({
+    mutationFn: () => booksApi.delete(book!.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['childBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['familyStats'] });
+      onClose();
+    },
+  });
+
+  const handleSave = () => {
+    const newErrors: any = {};
+    if (!editTitle.trim()) newErrors.title = 'Título é obrigatório';
+    if (!editAuthor.trim()) newErrors.author = 'Autor é obrigatório';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    updateBookMutation.mutate({
+      title: editTitle,
+      author: editAuthor,
+      genre: editGenre,
+      startDate: editStartDate || undefined,
+      totalPages: editTotalPages ? parseInt(editTotalPages) : undefined,
+    });
+  };
+
+  const handleCancel = () => {
+    setEditTitle(book?.title || '');
+    setEditAuthor(book?.author || '');
+    setEditGenre(book?.genre as GenreFilter || 'FANTASIA');
+    setEditStartDate(book?.startDate || '');
+    setEditTotalPages(book?.totalPages?.toString() || '');
+    setErrors({});
+    setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    deleteBookMutation.mutate();
+  };
+
   if (!book) return null;
 
   const genre = GENRES[book.genre as keyof typeof GENRES];
@@ -360,7 +417,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
     : null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Detalhes do Livro" variant="white">
+    <Modal isOpen={isOpen} onClose={onClose} title={isEditing ? "Editar Livro" : "Detalhes do Livro"} variant="white">
       <div className="flex gap-4 mb-6">
         <div
           className="w-20 h-28 rounded-xl flex items-center justify-center text-4xl shadow-lg flex-shrink-0"
@@ -369,29 +426,67 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
           {genre?.icon}
         </div>
         <div className="flex-1">
-          <h3 className="text-xl font-bold mb-1" style={{ color: COLORS.text }}>
-            {book.title}
-          </h3>
-          <p className="text-gray-500 mb-2">{book.author}</p>
+          {isEditing ? (
+            <>
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Título do livro"
+                className={`w-full text-xl font-bold mb-2 px-3 py-2 rounded-lg border-2 ${errors.title ? 'border-red-500' : 'border-gray-200'} focus:outline-none focus:border-orange-400`}
+                style={{ color: COLORS.text }}
+              />
+              {errors.title && <p className="text-xs text-red-500 mb-2">{errors.title}</p>}
 
-          <div className="flex flex-wrap gap-2">
-            <span
-              className="text-xs px-2 py-1 rounded-full"
-              style={{ backgroundColor: status.bgColor, color: status.color }}
-            >
-              {status.icon} {status.label}
-            </span>
-            <span
-              className="text-xs px-2 py-1 rounded-full"
-              style={{ backgroundColor: `${genre?.color}20`, color: genre?.color }}
-            >
-              {genre?.icon} {genre?.name}
-            </span>
-          </div>
+              <input
+                type="text"
+                value={editAuthor}
+                onChange={(e) => setEditAuthor(e.target.value)}
+                placeholder="Autor"
+                className={`w-full text-gray-500 mb-2 px-3 py-2 rounded-lg border-2 ${errors.author ? 'border-red-500' : 'border-gray-200'} focus:outline-none focus:border-orange-400`}
+              />
+              {errors.author && <p className="text-xs text-red-500 mb-2">{errors.author}</p>}
+
+              <div className="flex flex-wrap gap-2 mb-2">
+                <select
+                  value={editGenre}
+                  onChange={(e) => setEditGenre(e.target.value as GenreFilter)}
+                  className="text-xs px-3 py-2 rounded-full border-2 border-gray-200 focus:outline-none focus:border-orange-400"
+                  style={{ color: GENRES[editGenre as keyof typeof GENRES]?.color }}
+                >
+                  {Object.entries(GENRES).map(([key, g]) => (
+                    <option key={key} value={key}>{g.icon} {g.name}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          ) : (
+            <>
+              <h3 className="text-xl font-bold mb-1" style={{ color: COLORS.text }}>
+                {book.title}
+              </h3>
+              <p className="text-gray-500 mb-2">{book.author}</p>
+
+              <div className="flex flex-wrap gap-2">
+                <span
+                  className="text-xs px-2 py-1 rounded-full"
+                  style={{ backgroundColor: status.bgColor, color: status.color }}
+                >
+                  {status.icon} {status.label}
+                </span>
+                <span
+                  className="text-xs px-2 py-1 rounded-full"
+                  style={{ backgroundColor: `${genre?.color}20`, color: genre?.color }}
+                >
+                  {genre?.icon} {genre?.name}
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {book.status === 'reading' && (
+      {book.status === 'reading' && !isEditing && (
         <div className="bg-gray-50 rounded-xl p-4 mb-4">
           <p className="text-sm font-medium mb-2" style={{ color: COLORS.text }}>Progresso</p>
           {progress !== null ? (
@@ -416,33 +511,57 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
       )}
 
       <div className="bg-gray-50 rounded-xl p-4 mb-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          {book.startDate && (
+        {isEditing ? (
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-gray-500">Início</p>
-              <p className="font-medium" style={{ color: COLORS.text }}>
-                {new Date(book.startDate).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
+              <p className="text-gray-500 mb-1">Início</p>
+              <input
+                type="date"
+                value={editStartDate ? new Date(editStartDate).toISOString().split('T')[0] : ''}
+                onChange={(e) => setEditStartDate(e.target.value ? new Date(e.target.value).toISOString() : '')}
+                className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-orange-400"
+              />
             </div>
-          )}
-          {book.finishDate && (
             <div>
-              <p className="text-gray-500">Fim</p>
-              <p className="font-medium" style={{ color: COLORS.text }}>
-                {new Date(book.finishDate).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
+              <p className="text-gray-500 mb-1">Páginas</p>
+              <input
+                type="number"
+                value={editTotalPages}
+                onChange={(e) => setEditTotalPages(e.target.value)}
+                placeholder="Total de páginas"
+                className="w-full px-3 py-2 rounded-lg border-2 border-gray-200 focus:outline-none focus:border-orange-400"
+              />
             </div>
-          )}
-          {book.totalPages && (
-            <div>
-              <p className="text-gray-500">Páginas</p>
-              <p className="font-medium" style={{ color: COLORS.text }}>{book.totalPages}</p>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            {book.startDate && (
+              <div>
+                <p className="text-gray-500">Início</p>
+                <p className="font-medium" style={{ color: COLORS.text }}>
+                  {new Date(book.startDate).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+            )}
+            {book.finishDate && (
+              <div>
+                <p className="text-gray-500">Fim</p>
+                <p className="font-medium" style={{ color: COLORS.text }}>
+                  {new Date(book.finishDate).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+            )}
+            {book.totalPages && (
+              <div>
+                <p className="text-gray-500">Páginas</p>
+                <p className="font-medium" style={{ color: COLORS.text }}>{book.totalPages}</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {book.status === 'finished' && book.rating && (
+      {book.status === 'finished' && book.rating && !isEditing && (
         <div className="bg-green-50 rounded-xl p-4 mb-4">
           <p className="text-sm font-medium mb-2" style={{ color: COLORS.text }}>Avaliação</p>
 
@@ -476,6 +595,67 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
               </span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      {!isEditing && !showDeleteConfirm && (
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={() => setIsEditing(true)}
+            className="flex-1 px-4 py-3 rounded-xl font-bold border-2 border-orange-500 text-orange-500 hover:bg-orange-50 transition-all"
+          >
+            ✏️ Editar
+          </button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-4 py-3 rounded-xl font-bold border-2 border-red-500 text-red-500 hover:bg-red-50 transition-all"
+          >
+            🗑️ Remover
+          </button>
+        </div>
+      )}
+
+      {/* Edit Mode Buttons */}
+      {isEditing && (
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={handleCancel}
+            className="flex-1 px-4 py-3 rounded-xl font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={updateBookMutation.isPending}
+            className="flex-1 px-4 py-3 rounded-xl font-bold bg-orange-500 text-white hover:bg-orange-600 transition-all disabled:opacity-50"
+          >
+            {updateBookMutation.isPending ? 'A guardar...' : '💾 Guardar'}
+          </button>
+        </div>
+      )}
+
+      {/* Delete Confirmation */}
+      {showDeleteConfirm && !isEditing && (
+        <div className="bg-red-50 p-4 rounded-xl mt-4">
+          <p className="text-sm text-red-700 mb-3 text-center font-medium">
+            Tens a certeza? Este livro e todos os seus registos serão removidos.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="flex-1 px-4 py-2 rounded-xl font-bold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleteBookMutation.isPending}
+              className="flex-1 px-4 py-2 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition-all disabled:opacity-50"
+            >
+              {deleteBookMutation.isPending ? 'A remover...' : 'Confirmar'}
+            </button>
+          </div>
         </div>
       )}
     </Modal>

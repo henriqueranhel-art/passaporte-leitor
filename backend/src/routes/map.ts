@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { BookStatus } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import { getCurrentLevel, getNextLevel, LEVEL_CATEGORIES } from '../lib/levels-config.js';
 import { getAuthFamilyId } from '../middleware/auth.js';
@@ -170,7 +171,7 @@ mapRoutes.get('/child/:childId', async (c) => {
         },
         include: {
             books: {
-                where: { status: 'finished' },
+                where: { status: BookStatus.FINISHED },
             },
             readingSessions: {
                 select: {
@@ -225,7 +226,7 @@ mapRoutes.get('/family/:familyId', async (c) => {
             children: {
                 include: {
                     books: {
-                        where: { status: 'finished' },
+                        where: { status: BookStatus.FINISHED },
                     },
                     readingSessions: {
                         select: {

@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
+import { BookStatus } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 
 export const readingLogRoutes = new Hono();
@@ -49,16 +50,16 @@ readingLogRoutes.post('/', async (c) => {
     });
 
     // If book was finished, update book status
-    if (finishedBook && book.status !== 'finished') {
+    if (finishedBook && book.status !== BookStatus.FINISHED) {
         await prisma.book.update({
             where: { id: bookId },
             data: {
-                status: 'finished',
+                status: BookStatus.FINISHED,
                 finishDate: new Date(),
                 currentPage: pageEnd || book.totalPages || undefined
             }
         });
-    } else if (pageEnd && book.status === 'reading') {
+    } else if (pageEnd && book.status === BookStatus.READING) {
         // Update current page if book is being read
         await prisma.book.update({
             where: { id: bookId },

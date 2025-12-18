@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AVATARS, LevelCategory } from '../lib/types';
 import { familyApi, childrenApi } from '../lib/api';
 import { useFamilyId } from '../lib/store';
+import { THEME_CONFIG } from '../lib/themeConfig';
+
 
 // ============================================================================
 // DESIGN TOKENS
@@ -245,9 +247,6 @@ const FamilyForm = ({ family, onSave, onCancel }: any) => {
   );
 };
 
-// ============================================================================
-// CHILD FORM
-// ============================================================================
 
 const ChildForm = ({ child, onSave, onCancel, onDelete }: any) => {
   const [name, setName] = useState(child?.name || '');
@@ -259,6 +258,7 @@ const ChildForm = ({ child, onSave, onCancel, onDelete }: any) => {
 
   const isNew = !child?.id;
   const age = birthYear ? currentYear - birthYear : null;
+  const theme = THEME_CONFIG[levelCategory];
 
   const handleSave = () => {
     const newErrors: any = {};
@@ -275,14 +275,36 @@ const ChildForm = ({ child, onSave, onCancel, onDelete }: any) => {
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm">
-      <div className="flex items-center justify-center mb-6 p-4 bg-orange-50 rounded-xl">
-        <div className="text-center">
-          <span className="text-5xl">{avatar}</span>
-          <p className="font-bold mt-2">{name || 'Nome'}</p>
-          <p className="text-sm text-gray-500">{age ? `${age} anos` : '-- anos'}</p>
-          <div className="flex items-center justify-center gap-1 mt-2">
-            <span>{LEVEL_CATEGORIES[levelCategory]?.icon}</span>
-            <span className="text-sm text-gray-500">{LEVEL_CATEGORIES[levelCategory]?.name}</span>
+      {/* Themed Preview Card */}
+      <div className="mb-6 rounded-t-2xl overflow-hidden">
+        {/* Theme Header */}
+        <div className="px-4 py-2 flex items-center gap-2" style={{ backgroundColor: theme.headerBg }}>
+          <span className="text-lg">{LEVEL_CATEGORIES[levelCategory]?.icon}</span>
+          <span className="text-sm font-bold text-white">{LEVEL_CATEGORIES[levelCategory]?.name}</span>
+        </div>
+
+        {/* Themed Background Section */}
+        <div className="relative overflow-hidden" style={{ background: theme.gradient }}>
+          {/* Background Elements */}
+          <theme.BackgroundElements />
+
+          {/* Content */}
+          <div className="relative z-10 p-4 flex items-center gap-4">
+            {/* Avatar */}
+            <div className="w-16 h-16 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl shadow-sm flex-shrink-0">
+              {avatar}
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold text-white truncate">{name || 'Nome'}</h3>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-white/90" style={{ color: theme.badgeTextColor }}>
+                  ✨ {LEVEL_CATEGORIES[levelCategory]?.name}
+                </span>
+              </div>
+              {age && <p className="text-sm text-white/70 mt-1">{age} anos</p>}
+            </div>
           </div>
         </div>
       </div>

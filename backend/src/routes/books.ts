@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { Genre } from '@prisma/client';
+import { Genre, BookStatus } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import { checkAndAwardAchievements } from '../services/achievements.js';
 
@@ -73,7 +73,13 @@ bookRoutes.get('/family/:familyId', async (c) => {
 
   // Filter by status
   if (status && ['reading', 'to-read', 'finished'].includes(status)) {
-    where.status = status;
+    // Map lowercase string to enum value
+    const statusMap: Record<string, BookStatus> = {
+      'to-read': BookStatus.TO_READ,
+      'reading': BookStatus.READING,
+      'finished': BookStatus.FINISHED
+    };
+    where.status = statusMap[status];
   }
 
   // Filter by genre
@@ -127,7 +133,72 @@ bookRoutes.get('/family/:familyId', async (c) => {
     }
   });
 
-  return c.json(books);
+  // Convert BookStatus enum to lowercase mapped values for API response
+  const serializedBooks = books.map(book => ({
+    ...book,
+    status: book.status.toLowerCase().replace(/_/g, '-') as 'to-read' | 'reading' | 'finished'
+  }));
+
+  return c.json(serializedBooks);
+});
+
+// ============================================================================
+// GET /api/books/child/:childId - Get books for a specific child
+// ============================================================================
+
+bookRoutes.get('/child/:childId', async (c) => {
+  const { childId } = c.req.param();
+
+  // Query parameters for filtering
+  const genre = c.req.query('genre');
+  const limit = c.req.query('limit');
+  const offset = c.req.query('offset');
+
+  // Build where clause
+  const where: any = {
+    childId: childId
+  };
+
+  // Filter by genre if provided
+  if (genre) {
+    where.genre = genre;
+  }
+
+  // Build query options
+  const queryOptions: any = {
+    where,
+    orderBy: { updatedAt: 'desc' },
+    include: {
+      child: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true
+        }
+      }
+    }
+  };
+
+  // Add pagination if provided
+  if (limit) {
+    queryOptions.take = parseInt(limit);
+  }
+  if (offset) {
+    queryOptions.skip = parseInt(offset);
+  }
+
+  const [books, total] = await Promise.all([
+    prisma.book.findMany(queryOptions),
+    prisma.book.count({ where })
+  ]);
+
+  // Convert BookStatus enum to lowercase mapped values for API response
+  const serializedBooks = books.map(book => ({
+    ...book,
+    status: book.status.toLowerCase().replace(/_/g, '-') as 'to-read' | 'reading' | 'finished'
+  }));
+
+  return c.json({ books: serializedBooks, total });
 });
 
 // ... POST endpoints follow ...
@@ -159,7 +230,7 @@ bookRoutes.post('/', async (c) => {
     isbn: data.isbn,
     genre: data.genre as Genre,
     totalPages: data.totalPages,
-    status: data.status,
+    status: data.status as BookStatus,
     currentPage: data.currentPage,
     rating: data.rating,
     notes: data.notes,

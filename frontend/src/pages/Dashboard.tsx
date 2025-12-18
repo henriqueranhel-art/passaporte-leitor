@@ -35,7 +35,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 text-gray-800">
-          Olá, Exploradores! 👋
+          Olá! 👋
         </h1>
         <p className="text-gray-500">
           Acompanhem as aventuras literárias da família.

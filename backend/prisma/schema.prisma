@@ -32,6 +32,12 @@ enum Genre {
   HISTORIA
 }
 
+enum BookStatus {
+  TO_READ  @map("to-read")
+  READING  @map("reading")
+  FINISHED @map("finished")
+}
+
 // ============================================================================
 // MODELOS PRINCIPAIS
 // ============================================================================
@@ -97,7 +103,7 @@ model Book {
   totalPages Int?
 
   // Estado de Leitura
-  status          String    @default("to-read") // to-read, reading, finished
+  status          BookStatus @default(TO_READ)
   currentPage     Int?
   startDate       DateTime?
   finishDate      DateTime?

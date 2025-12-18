@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
+import { BookStatus } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import { getCurrentLevel, getNextLevel, getLevelProgress, getBooksToNextLevel } from '../lib/levels-config.js';
 
@@ -49,7 +50,16 @@ childRoutes.get('/:id', async (c) => {
     return c.json({ error: 'Criança não encontrada' }, 404);
   }
 
-  return c.json(child);
+  // Serialize book status to lowercase
+  const serializedChild = {
+    ...child,
+    books: child.books.map(book => ({
+      ...book,
+      status: book.status.toLowerCase().replace(/_/g, '-') as 'to-read' | 'reading' | 'finished'
+    }))
+  };
+
+  return c.json(serializedChild);
 });
 
 // ============================================================================
@@ -70,8 +80,8 @@ childRoutes.get('/family/:familyId', async (c) => {
       books: {
         where: {
           OR: [
-            { status: 'reading' },
-            { status: 'finished' }
+            { status: BookStatus.READING },
+            { status: BookStatus.FINISHED }
           ]
         },
         orderBy: { updatedAt: 'desc' }
@@ -89,8 +99,17 @@ childRoutes.get('/family/:familyId', async (c) => {
     orderBy: { createdAt: 'asc' },
   });
 
+  // Serialize book status to lowercase for all children
+  const serializedChildren = children.map(child => ({
+    ...child,
+    books: child.books.map((book: any) => ({
+      ...book,
+      status: book.status.toLowerCase().replace(/_/g, '-') as 'to-read' | 'reading' | 'finished'
+    }))
+  }));
+
   // Transform data for dashboard
-  const enrichedChildren = (children as any[]).map(child => {
+  const enrichedChildren = (serializedChildren as any[]).map(child => {
     // 1. Calculate Level using levels-config
 
     const levelCategory = child.levelCategory || 'EXPLORERS'; // Default to EXPLORERS

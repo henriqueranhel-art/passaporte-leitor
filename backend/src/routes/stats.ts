@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { BookStatus } from '@prisma/client';
 import prisma from '../lib/prisma.js';
 import { getGenreStats } from '../services/achievements.js';
 import { getCurrentLevel, getNextLevel, getLevelProgress, getBooksToNextLevel } from '../lib/levels-config.js';
@@ -29,8 +30,14 @@ statsRoutes.get('/child/:childId', async (c) => {
     return c.json({ error: 'Criança não encontrada' }, 404);
   }
 
-  const bookCount = child.books.length;
-  const finishedBooksCount = child.books.filter((b: any) => b.status === 'finished').length;
+  // Serialize book status to lowercase
+  const serializedBooks = child.books.map(book => ({
+    ...book,
+    status: book.status.toLowerCase().replace(/_/g, '-') as 'to-read' | 'reading' | 'finished'
+  }));
+
+  const bookCount = serializedBooks.length;
+  const finishedBooksCount = serializedBooks.filter((b: any) => b.status === 'finished').length;
   const levelCategory = child.levelCategory || 'EXPLORERS';
 
   const currentLevel = getCurrentLevel(finishedBooksCount, levelCategory);
@@ -48,20 +55,20 @@ statsRoutes.get('/child/:childId', async (c) => {
 
   // Estatísticas de leitura
   const now = new Date();
-  const thisMonth = child.books.filter((b: any) => {
+  const thisMonth = serializedBooks.filter((b: any) => {
     if (!b.finishDate) return false;
     const d = new Date(b.finishDate);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
-  const thisYear = child.books.filter((b: any) => {
+  const thisYear = serializedBooks.filter((b: any) => {
     if (!b.finishDate) return false;
     const d = new Date(b.finishDate);
     return d.getFullYear() === now.getFullYear();
   }).length;
 
   // Média de avaliação
-  const ratedBooks = child.books.filter((b) => b.rating !== null);
+  const ratedBooks = serializedBooks.filter((b) => b.rating !== null);
   const averageRating =
     ratedBooks.length > 0
       ? ratedBooks.reduce((sum, b) => sum + (b.rating || 0), 0) / ratedBooks.length
@@ -69,7 +76,7 @@ statsRoutes.get('/child/:childId', async (c) => {
 
   // Género favorito
   const genreCounts: Record<string, number> = {};
-  for (const book of child.books) {
+  for (const book of serializedBooks) {
     genreCounts[book.genre] = (genreCounts[book.genre] || 0) + 1;
   }
   const favoriteGenre =
@@ -86,6 +93,7 @@ statsRoutes.get('/child/:childId', async (c) => {
     level,
     books: {
       total: bookCount,
+      read: finishedBooksCount, // Add this for certificate
       thisMonth,
       thisYear,
       averageRating,
@@ -134,7 +142,12 @@ statsRoutes.get('/family/:familyId', async (c) => {
     return c.json({ error: 'Família não encontrada' }, 404);
   }
 
-  const allBooks = family.children.flatMap((c) => c.books);
+  const allBooks = family.children.flatMap((c) =>
+    c.books.map(book => ({
+      ...book,
+      status: book.status.toLowerCase().replace(/_/g, '-') as 'to-read' | 'reading' | 'finished'
+    }))
+  );
   const totalBooks = allBooks.length;
 
   // Livros por mês (últimos 6 meses)
@@ -161,7 +174,11 @@ statsRoutes.get('/family/:familyId', async (c) => {
 
   // Estatísticas por criança
   const childStats = family.children.map((child) => {
-    const finishedCount = child.books.filter((b: any) => b.status === 'finished').length;
+    const serializedChildBooks = child.books.map(book => ({
+      ...book,
+      status: book.status.toLowerCase().replace(/_/g, '-') as 'to-read' | 'reading' | 'finished'
+    }));
+    const finishedCount = serializedChildBooks.filter((b: any) => b.status === 'finished').length;
     const childLevelCategory = child.levelCategory || 'EXPLORERS';
     const childCurrentLevel = getCurrentLevel(finishedCount, childLevelCategory);
     const childNextLevel = getNextLevel(finishedCount, childLevelCategory);
@@ -236,7 +253,11 @@ statsRoutes.get('/leaderboard/:familyId', async (c) => {
         ? child.books.filter((b: any) => b.finishDate && new Date(b.finishDate) >= filterDate!)
         : child.books;
 
-      const childFinished = child.books.filter((b: any) => b.status === 'finished').length;
+      const serializedChildBooks = child.books.map(book => ({
+        ...book,
+        status: book.status.toLowerCase().replace(/_/g, '-') as 'to-read' | 'reading' | 'finished'
+      }));
+      const childFinished = serializedChildBooks.filter((b: any) => b.status === 'finished').length;
       const childCategory = child.levelCategory || 'EXPLORERS';
       const childCurLevel = getCurrentLevel(childFinished, childCategory);
       const childNxtLevel = getNextLevel(childFinished, childCategory);
