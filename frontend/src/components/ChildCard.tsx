@@ -239,7 +239,7 @@ export function ChildCard({ child, onAddBook, onLogReading, onViewDetails }: Chi
                         <div>
                             <div className="flex justify-between text-xs mb-1">
                                 <span className="text-white/70">Próximo: {child.level.nextLevel}</span>
-                                <span className="text-white font-medium">{child.level.booksToNextLevel} livros</span>
+                                <span className="text-white font-medium">Falta(m) {child.level.booksToNextLevel} livros</span>
                             </div>
                             <div className="h-2 bg-white/30 rounded-full overflow-hidden">
                                 <div

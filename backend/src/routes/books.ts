@@ -223,6 +223,13 @@ bookRoutes.post('/', async (c) => {
     return c.json({ error: 'Criança não encontrada' }, 404);
   }
 
+  // Map lowercase status to enum
+  const statusMap: Record<string, BookStatus> = {
+    'to-read': BookStatus.TO_READ,
+    'reading': BookStatus.READING,
+    'finished': BookStatus.FINISHED
+  };
+
   const bookData: any = {
     childId: data.childId,
     title: data.title,
@@ -230,7 +237,7 @@ bookRoutes.post('/', async (c) => {
     isbn: data.isbn,
     genre: data.genre as Genre,
     totalPages: data.totalPages,
-    status: data.status as BookStatus,
+    status: statusMap[data.status] || BookStatus.TO_READ,
     currentPage: data.currentPage,
     rating: data.rating,
     notes: data.notes,
@@ -267,7 +274,17 @@ bookRoutes.put('/:id', async (c) => {
     return c.json({ error: 'Dados inválidos', details: validation.error.issues }, 400);
   }
 
+  // Map lowercase status to enum if status is provided
   const data: any = { ...validation.data };
+  if (data.status) {
+    const statusMap: Record<string, BookStatus> = {
+      'to-read': BookStatus.TO_READ,
+      'reading': BookStatus.READING,
+      'finished': BookStatus.FINISHED
+    };
+    data.status = statusMap[data.status];
+  }
+
   if (data.startDate) data.startDate = new Date(data.startDate);
   if (data.finishDate) data.finishDate = new Date(data.finishDate);
 
