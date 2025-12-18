@@ -15,8 +15,9 @@ const DEFAULT_DAILY_GOAL_MINUTES = 15;
 // HELPER: Calculate Streak
 // ============================================================================
 
-async function calculateStreak(childId: string): Promise<number> {
-    const sessions = await prisma.readingSession.findMany({
+async function calculateStreak(childId: string, existingSessions?: any[]): Promise<number> {
+    // Use existing sessions if provided (optimization for batch operations)
+    const sessions = existingSessions || await prisma.readingSession.findMany({
         where: { childId },
         select: { date: true },
         orderBy: { date: 'desc' },
@@ -115,8 +116,8 @@ async function calculateChildStats(child: ChildStatsInput): Promise<ChildStatsOu
     );
     const totalReadingDays = uniqueDates.size;
 
-    // Calculate streak
-    const streak = await calculateStreak(child.id);
+    // Calculate streak using already-loaded sessions (optimization)
+    const streak = await calculateStreak(child.id, child.readingSessions);
 
     // Calculate total hours
     const totalMinutes = child.readingSessions.reduce(

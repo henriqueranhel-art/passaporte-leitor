@@ -11,12 +11,14 @@ const createChildSchema = z.object({
   name: z.string().min(1).max(50),
   avatar: z.string().max(10).default('🧒'),
   birthYear: z.number().int().min(2000).max(2025).optional(),
+  levelCategory: z.enum(['MAGIC', 'EXPLORERS', 'KNIGHTS', 'SPACE']).default('EXPLORERS'),
 });
 
 const updateChildSchema = z.object({
   name: z.string().min(1).max(50).optional(),
   avatar: z.string().max(10).optional(),
   birthYear: z.number().int().min(2000).max(2025).optional().nullable(),
+  levelCategory: z.enum(['MAGIC', 'EXPLORERS', 'KNIGHTS', 'SPACE']).optional(),
 });
 
 // ============================================================================
@@ -220,7 +222,7 @@ childRoutes.post('/', async (c) => {
     return c.json({ error: 'Dados inválidos', details: validation.error.issues }, 400);
   }
 
-  const { familyId, name, avatar, birthYear } = validation.data;
+  const { familyId, name, avatar, birthYear, levelCategory } = validation.data;
 
   // Verificar se a família existe
   const family = await prisma.family.findUnique({ where: { id: familyId } });
@@ -234,6 +236,7 @@ childRoutes.post('/', async (c) => {
       name,
       avatar,
       birthYear,
+      levelCategory,
     },
     include: {
       _count: {

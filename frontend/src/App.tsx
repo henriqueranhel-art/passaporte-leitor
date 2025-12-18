@@ -11,6 +11,7 @@ import Books from './pages/Books';
 import MapPage from './pages/Map';
 import AchievementsPage from './pages/Achievements';
 import PrintPage from './pages/Print';
+import Settings from './pages/Settings';
 
 // Components
 import Layout from './components/Layout';
@@ -109,6 +110,7 @@ export default function App() {
           <Route path="/mapa" element={<MapPage />} />
           <Route path="/conquistas" element={<AchievementsPage />} />
           <Route path="/imprimir" element={<PrintPage />} />
+          <Route path="/definicoes" element={<Settings />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
         <Route path="/auth" element={<Navigate to="/" replace />} />

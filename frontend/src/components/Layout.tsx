@@ -79,7 +79,7 @@ export default function Layout() {
         </div>
 
         {/* Navigation */}
-        <nav className="space-y-2">
+        <nav className="space-y-2 flex-1">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -100,6 +100,25 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Settings Link - before logout */}
+        <div className="mt-auto mb-4">
+          <NavLink
+            to="/definicoes"
+            onClick={() => setIsSidebarOpen(false)}
+            className={({ isActive }) =>
+              clsx(
+                'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all',
+                isActive
+                  ? 'bg-background font-bold shadow-sm'
+                  : 'hover:bg-gray-50'
+              )
+            }
+          >
+            <span className="text-xl">⚙️</span>
+            <span className="text-gray-800">Definições</span>
+          </NavLink>
+        </div>
 
         {/* Tip */}
         <div className="p-4 rounded-xl bg-green-50 mt-4">

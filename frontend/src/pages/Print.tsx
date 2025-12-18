@@ -41,20 +41,6 @@ export default function PrintPage() {
       desc: 'Carimbos dos livros lidos',
       action: () => setShowPassport(true),
     },
-    {
-      id: 'map',
-      icon: '🗺️',
-      name: 'Mapa do Explorador',
-      desc: 'Poster para a parede',
-      action: () => alert('Em breve!'),
-    },
-    {
-      id: 'bookmarks',
-      icon: '📑',
-      name: 'Marcadores de Livro',
-      desc: 'Set de marcadores temáticos',
-      action: () => alert('Em breve!'),
-    },
   ];
 
   return (
@@ -74,11 +60,10 @@ export default function PrintPage() {
             {children.map((c) => (
               <button
                 key={c.id}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl ${
-                  child?.id === c.id
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl ${child?.id === c.id
                     ? 'ring-2 ring-primary bg-primary/10'
                     : 'bg-gray-100'
-                }`}
+                  }`}
               >
                 <span className="text-2xl">{c.avatar}</span>
                 <span className="font-medium">{c.name}</span>
