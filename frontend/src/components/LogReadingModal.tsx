@@ -100,25 +100,7 @@ const DateSelector = ({ value, onChange }: { value: string; onChange: (date: str
 
             {/* Recent days grid */}
             <div className="grid grid-cols-4 gap-2 mb-3">
-                {recentDays.slice(0, 4).map((day) => (
-                    <button
-                        key={day.date}
-                        onClick={() => {
-                            onChange(day.date);
-                            setShowCustomDate(false);
-                        }}
-                        className={`py-3 px-2 rounded-xl text-center transition-all ${value === day.date && !showCustomDate
-                            ? 'bg-orange-500 text-white'
-                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                            }`}
-                    >
-                        <span className="text-xs font-medium block">{day.label}</span>
-                    </button>
-                ))}
-            </div>
-
-            <div className="grid grid-cols-4 gap-2 mb-3">
-                {recentDays.slice(4, 7).map((day) => (
+                {recentDays.slice(0, 3).map((day) => (
                     <button
                         key={day.date}
                         onClick={() => {
