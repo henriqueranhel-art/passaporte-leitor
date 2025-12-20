@@ -12,7 +12,10 @@ const createSessionSchema = z.object({
     pageEnd: z.number().int().optional(),
     mood: z.number().int().min(1).max(5).optional(),
     finishedBook: z.boolean().optional(),
-    date: z.string().datetime().optional()
+    // Accept date in YYYY-MM-DD format and transform to ISO datetime for proper timestamp
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar no formato YYYY-MM-DD')
+        .transform(dateStr => `${dateStr}T00:00:00.000Z`)
+        .optional()
 });
 
 readingLogRoutes.post('/', async (c) => {
