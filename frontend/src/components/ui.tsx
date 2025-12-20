@@ -94,7 +94,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export function Input({ label, icon, error, className, ...props }: InputProps) {
   return (
-    <div className="mb-4">
+    <div className="mb-2.5">
       {label && (
         <label className="block text-sm font-medium mb-2 text-gray-800">
           {label}
@@ -108,7 +108,7 @@ export function Input({ label, icon, error, className, ...props }: InputProps) {
         )}
         <input
           className={clsx(
-            'w-full px-4 py-3 rounded-xl border-2 text-lg transition-colors',
+            'w-full px-4 py-2 rounded-xl border-2 text-lg transition-colors',
             'focus:outline-none focus:border-primary',
             icon && 'pl-12',
             error ? 'border-red-300' : 'border-gray-200',

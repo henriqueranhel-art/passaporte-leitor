@@ -26,8 +26,8 @@ const COLORS = {
 };
 
 export const STATUS_CONFIG = {
-  'reading': { label: 'A Ler', icon: '📖', color: COLORS.secondary, bgColor: `${COLORS.secondary}20` },
-  'to-read': { label: 'Por Ler', icon: '📋', color: COLORS.textLight, bgColor: '#f3f4f6' },
+  'reading': { label: 'Estou a Ler', icon: '📖', color: COLORS.secondary, bgColor: `${COLORS.secondary}20` },
+  'to-read': { label: 'Quero Ler', icon: '📋', color: COLORS.textLight, bgColor: '#f3f4f6' },
   'finished': { label: 'Terminado', icon: '✅', color: COLORS.success, bgColor: `${COLORS.success}20` },
 } as const;
 
@@ -167,13 +167,13 @@ const SearchBar = ({ value, onChange }: SearchBarProps) => (
 const FilterTabs = ({ activeFilter, onChange, counts }: FilterTabsProps) => {
   const filters = [
     { id: 'all' as const, label: 'Todos', icon: '📚' },
-    { id: 'reading' as const, label: 'A Ler', icon: '📖' },
-    { id: 'to-read' as const, label: 'Por Ler', icon: '📋' },
+    { id: 'reading' as const, label: 'Estou a Ler', icon: '📖' },
+    { id: 'to-read' as const, label: 'Quero Ler', icon: '📋' },
     { id: 'finished' as const, label: 'Terminados', icon: '✅' },
   ];
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2">
+    <div className="flex gap-1 overflow-x-auto pb-2 -mx-2 px-2">
       {filters.map((filter) => {
         const isActive = activeFilter === filter.id;
         const count = filter.id === 'all' ? counts.total :
@@ -184,16 +184,16 @@ const FilterTabs = ({ activeFilter, onChange, counts }: FilterTabsProps) => {
           <button
             key={filter.id}
             onClick={() => onChange(filter.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-all ${isActive ? 'shadow-md scale-105' : 'opacity-70 hover:opacity-100'
+            className={`flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${isActive ? 'shadow-md scale-105' : 'opacity-70 hover:opacity-100'
               }`}
             style={{
               backgroundColor: isActive ? COLORS.primary : '#f3f4f6',
               color: isActive ? 'white' : COLORS.text,
             }}
           >
-            <span>{filter.icon}</span>
+            <span className="text-xs">{filter.icon}</span>
             <span>{filter.label}</span>
-            <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? 'bg-white/20' : 'bg-gray-200'}`}>
+            <span className={`text-xs px-1 py-0.5 rounded-full ${isActive ? 'bg-white/20' : 'bg-gray-200'}`}>
               {count}
             </span>
           </button>
@@ -281,12 +281,12 @@ const CompactBookCard = ({ book, onClick, showChild, children }: CompactBookCard
   return (
     <div
       onClick={onClick}
-      className="bg-white rounded-xl p-3 cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] active:scale-100 border"
+      className="bg-white rounded-xl p-2 cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] active:scale-100 border"
       style={{ borderColor: COLORS.border }}
     >
-      <div className="flex items-start justify-between mb-2">
+      <div className="flex items-start justify-between mb-1">
         <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
           style={{ backgroundColor: `${genre?.color}15` }}
         >
           {genre?.icon}
@@ -294,7 +294,7 @@ const CompactBookCard = ({ book, onClick, showChild, children }: CompactBookCard
 
         {book.status === 'reading' && progress !== null && (
           <span
-            className="text-xs font-bold px-2 py-0.5 rounded-full"
+            className="text-xs font-bold px-1 py-0.5 rounded-full"
             style={{ backgroundColor: `${genre?.color}15`, color: genre?.color }}
           >
             {progress}%
@@ -309,7 +309,7 @@ const CompactBookCard = ({ book, onClick, showChild, children }: CompactBookCard
       </div>
 
       <h4
-        className="font-semibold text-sm leading-tight line-clamp-2 mb-1"
+        className="font-semibold text-xs leading-tight line-clamp-2 mb-0.5"
         style={{ color: COLORS.text }}
       >
         {book.title}
@@ -318,14 +318,14 @@ const CompactBookCard = ({ book, onClick, showChild, children }: CompactBookCard
       <p className="text-xs text-gray-400 truncate">{book.author}</p>
 
       {bookChild && (
-        <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
-          <span>{bookChild.avatar}</span>
+        <div className="flex items-center gap-0.5 mt-1 text-xs text-gray-400">
+          <span className="text-xs">{bookChild.avatar}</span>
           <span>{bookChild.name}</span>
         </div>
       )}
 
       {book.status === 'reading' && progress !== null && (
-        <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="mt-1 h-1 bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full"
             style={{ width: `${progress}%`, backgroundColor: genre?.color }}
@@ -348,7 +348,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
   // Editable fields state
   const [editTitle, setEditTitle] = useState(book?.title || '');
   const [editAuthor, setEditAuthor] = useState(book?.author || '');
-  const [editGenre, setEditGenre] = useState<GenreFilter>(book?.genre as GenreFilter || 'FANTASIA');
+  const [editGenre, setEditGenre] = useState<GenreFilter>(book?.genre as GenreFilter || 'ADVENTURE');
   const [editStartDate, setEditStartDate] = useState(book?.startDate || '');
   const [editTotalPages, setEditTotalPages] = useState(book?.totalPages?.toString() || '');
   const [errors, setErrors] = useState<any>({});
@@ -397,7 +397,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
   const handleCancel = () => {
     setEditTitle(book?.title || '');
     setEditAuthor(book?.author || '');
-    setEditGenre(book?.genre as GenreFilter || 'FANTASIA');
+    setEditGenre(book?.genre as GenreFilter || 'ADVENTURE');
     setEditStartDate(book?.startDate || '');
     setEditTotalPages(book?.totalPages?.toString() || '');
     setErrors({});
@@ -587,14 +587,6 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
             </div>
           )}
 
-          {book.recommended !== undefined && (
-            <div className="mt-3">
-              <span className={`text-sm px-3 py-1 rounded-full ${book.recommended ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}>
-                {book.recommended ? '👍 Recomendo a amigos!' : '👎 Não recomendo'}
-              </span>
-            </div>
-          )}
         </div>
       )}
 
@@ -818,11 +810,11 @@ export default function BooksPage() {
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto px-4 pb-8">
+      <div className="max-w-2xl mx-auto px-4 pb-3">
         {books.length === 0 ? (
           <EmptyState filter={statusFilter} isSearch={!!search} />
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             {books.map((book) => (
               <CompactBookCard
                 key={book.id}

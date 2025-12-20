@@ -222,6 +222,26 @@ export const statsApi = {
   },
 };
 
+// ============================================================================
+// READING LOGS API
+// ============================================================================
+
+export const readingLogsApi = {
+  create: (data: {
+    childId: string;
+    bookId: string;
+    minutes: number;
+    pageEnd?: number;
+    mood?: number;
+    finishedBook?: boolean;
+    date?: string;
+  }) =>
+    request('/reading-logs', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
 export { ApiError };
 
 // ============================================================================

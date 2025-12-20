@@ -8,14 +8,18 @@ export const bookRoutes = new Hono();
 
 // Schemas de validação
 const genreEnum = z.enum([
-  'FANTASIA',
-  'AVENTURA',
-  'ESPACO',
-  'NATUREZA',
-  'MISTERIO',
-  'OCEANO',
-  'CIENCIA',
-  'HISTORIA',
+  'ADVENTURE',
+  'FANTASY',
+  'MYSTERY',
+  'SCIENCE',
+  'COMICS',
+  'ROMANCE',
+  'HORROR',
+  'BIOGRAPHY',
+  'POETRY',
+  'HISTORY',
+  'ANIMALS',
+  'HUMOR',
 ]);
 
 const createBookSchema = z.object({
@@ -32,7 +36,6 @@ const createBookSchema = z.object({
   rating: z.number().int().min(1).max(5).optional(),
   notes: z.string().max(1000).optional(),
   favoriteCharacter: z.string().max(100).optional(),
-  recommended: z.boolean().optional(),
 });
 
 const updateBookSchema = z.object({
@@ -47,7 +50,6 @@ const updateBookSchema = z.object({
   rating: z.number().int().min(1).max(5).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   favoriteCharacter: z.string().max(100).optional().nullable(),
-  recommended: z.boolean().optional(),
 });
 
 // ============================================================================
@@ -242,7 +244,6 @@ bookRoutes.post('/', async (c) => {
     rating: data.rating,
     notes: data.notes,
     favoriteCharacter: data.favoriteCharacter,
-    recommended: data.recommended,
   };
 
   if (data.startDate) bookData.startDate = new Date(data.startDate);

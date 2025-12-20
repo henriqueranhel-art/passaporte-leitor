@@ -22,14 +22,18 @@ enum LevelCategory {
 }
 
 enum Genre {
-  FANTASIA
-  AVENTURA
-  ESPACO
-  NATUREZA
-  MISTERIO
-  OCEANO
-  CIENCIA
-  HISTORIA
+  ADVENTURE  @map("adventure")
+  FANTASY    @map("fantasy")
+  MYSTERY    @map("mystery")
+  SCIENCE    @map("science")
+  COMICS     @map("comics")
+  ROMANCE    @map("romance")
+  HORROR     @map("horror")
+  BIOGRAPHY  @map("biography")
+  POETRY     @map("poetry")
+  HISTORY    @map("history")
+  ANIMALS    @map("animals")
+  HUMOR      @map("humor")
 }
 
 enum BookStatus {
@@ -112,7 +116,6 @@ model Book {
   rating            Int?      // 1-5
   notes             String?   // "O que achou"
   favoriteCharacter String?
-  recommended       Boolean?
   
   // Datas de registo
   createdAt DateTime @default(now())

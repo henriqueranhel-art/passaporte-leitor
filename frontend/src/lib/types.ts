@@ -5,14 +5,18 @@
 export type LevelCategory = 'MAGIC' | 'EXPLORERS' | 'KNIGHTS' | 'SPACE';
 
 export type Genre =
-  | 'FANTASIA'
-  | 'AVENTURA'
-  | 'ESPACO'
-  | 'NATUREZA'
-  | 'MISTERIO'
-  | 'OCEANO'
-  | 'CIENCIA'
-  | 'HISTORIA';
+  | 'ADVENTURE'
+  | 'FANTASY'
+  | 'MYSTERY'
+  | 'SCIENCE'
+  | 'COMICS'
+  | 'ROMANCE'
+  | 'HORROR'
+  | 'BIOGRAPHY'
+  | 'POETRY'
+  | 'HISTORY'
+  | 'ANIMALS'
+  | 'HUMOR';
 
 export type AchievementCategory = 'READING' | 'GENRE' | 'STREAK' | 'SPECIAL';
 
@@ -111,7 +115,6 @@ export interface Book {
   rating?: number;
   notes?: string;
   favoriteCharacter?: string;
-  recommended?: boolean;
   dateRead: string;
   createdAt: string;
   updatedAt: string;
@@ -238,8 +241,17 @@ export interface CreateBookInput {
   rating?: number;
   notes?: string;
   favoriteCharacter?: string;
-  recommended?: boolean;
   dateRead?: string;
+}
+
+export interface CreateReadingSessionInput {
+  childId: string;
+  bookId: string;
+  minutes: number;
+  pageEnd?: number;
+  mood?: number;
+  finishedBook?: boolean;
+  date?: string;
 }
 
 // ============================================================================
@@ -247,14 +259,18 @@ export interface CreateBookInput {
 // ============================================================================
 
 export const GENRES: Record<Genre, { name: string; icon: string; theme: string; color: string; mapColor: string }> = {
-  FANTASIA: { name: 'Fantasia', icon: '🏰', theme: 'Reino Mágico', color: '#9B59B6', mapColor: '#D7BDE2' },
-  AVENTURA: { name: 'Aventura', icon: '🗺️', theme: 'Terras Selvagens', color: '#E67E22', mapColor: '#F5CBA7' },
-  ESPACO: { name: 'Espaço', icon: '🚀', theme: 'Galáxia Infinita', color: '#2C3E50', mapColor: '#85929E' },
-  NATUREZA: { name: 'Natureza', icon: '🌲', theme: 'Floresta Encantada', color: '#27AE60', mapColor: '#ABEBC6' },
-  MISTERIO: { name: 'Mistério', icon: '🔍', theme: 'Vale das Sombras', color: '#34495E', mapColor: '#ABB2B9' },
-  OCEANO: { name: 'Oceano', icon: '🌊', theme: 'Mar dos Piratas', color: '#3498DB', mapColor: '#AED6F1' },
-  CIENCIA: { name: 'Ciência', icon: '🔬', theme: 'Laboratório Secreto', color: '#1ABC9C', mapColor: '#A3E4D7' },
-  HISTORIA: { name: 'História', icon: '📜', theme: 'Ruínas Antigas', color: '#795548', mapColor: '#D7CCC8' },
+  ADVENTURE: { name: 'Aventura', icon: '🗺️', theme: 'Terras Selvagens', color: '#E67E22', mapColor: '#F5CBA7' },
+  FANTASY: { name: 'Fantasia', icon: '🧙', theme: 'Reino Mágico', color: '#9B59B6', mapColor: '#D7BDE2' },
+  MYSTERY: { name: 'Mistério', icon: '🔍', theme: 'Vale das Sombras', color: '#34495E', mapColor: '#ABB2B9' },
+  SCIENCE: { name: 'Ciência', icon: '🔬', theme: 'Laboratório Secreto', color: '#1ABC9C', mapColor: '#A3E4D7' },
+  COMICS: { name: 'Banda Desenhada', icon: '💥', theme: 'Cidade dos Heróis', color: '#E74C3C', mapColor: '#F5B7B1' },
+  ROMANCE: { name: 'Romance', icon: '💕', theme: 'Jardim do Amor', color: '#EC407A', mapColor: '#F8BBD0' },
+  HORROR: { name: 'Terror', icon: '👻', theme: 'Mansão Assombrada', color: '#5D4157', mapColor: '#D7BCC8' },
+  BIOGRAPHY: { name: 'Biografia', icon: '👤', theme: 'Corredor da Fama', color: '#795548', mapColor: '#D7CCC8' },
+  POETRY: { name: 'Poesia', icon: '🎭', theme: 'Teatro das Palavras', color: '#9C27B0', mapColor: '#E1BEE7' },
+  HISTORY: { name: 'História', icon: '🏛️', theme: 'Ruínas Antigas', color: '#8D6E63', mapColor: '#D7CCC8' },
+  ANIMALS: { name: 'Animais', icon: '🐾', theme: 'Selva Selvagem', color: '#4CAF50', mapColor: '#C8E6C9' },
+  HUMOR: { name: 'Humor', icon: '😂', theme: 'Palco da Comédia', color: '#FFC107', mapColor: '#FFECB3' },
 };
 
 export const AVATARS = [
