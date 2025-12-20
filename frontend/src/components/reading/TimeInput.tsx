@@ -7,16 +7,10 @@ interface TimeInputProps {
     dailyGoal?: number;
 }
 
+const PRESET_TIMES = [5, 10, 15, 30, 45, 60, 90, 120];
+
 export const TimeInput = ({ value, onChange, dailyGoal = 15 }: TimeInputProps) => {
-    const [isManualMode, setIsManualMode] = useState(false);
     const [manualValue, setManualValue] = useState(value.toString());
-
-    const presetTimes = [5, 10, 15, 20, 30, 45, 60];
-
-    const handleSliderChange = (newValue: number) => {
-        onChange(newValue);
-        setManualValue(newValue.toString());
-    };
 
     const handleManualChange = (input: string) => {
         setManualValue(input);
@@ -67,13 +61,10 @@ export const TimeInput = ({ value, onChange, dailyGoal = 15 }: TimeInputProps) =
                 </p>
 
                 <div className="flex flex-wrap gap-2 justify-center">
-                    {[5, 10, 15, 30, 45, 60, 90, 120].map((time) => (
+                    {PRESET_TIMES.map((time) => (
                         <button
                             key={time}
-                            onClick={() => {
-                                handleManualChange(time.toString());
-                                onChange(time);
-                            }}
+                            onClick={() => handleManualChange(time.toString())}
                             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${value === time
                                 ? 'bg-orange-500 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
