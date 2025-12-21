@@ -73,29 +73,29 @@ export default function Layout() {
         )}
 
         {/* Settings and Logout */}
-        <div className="rounded-2xl overflow-hidden bg-white shadow-sm border border-gray-100 mb-6">
-          <div className="flex">
-            <NavLink
-              to="/definicoes"
-              onClick={() => setIsSidebarOpen(false)}
-              className={({ isActive }) =>
-                clsx(
-                  'flex-1 py-3 px-4 flex items-center justify-center gap-2 transition-colors border-r border-gray-100',
-                  isActive ? 'bg-gray-100' : 'hover:bg-gray-50 active:bg-gray-100'
-                )
-              }
-            >
-              <span>⚙️</span>
-              <span className="text-sm font-medium text-gray-600">Definições</span>
-            </NavLink>
-            <button
-              onClick={() => useStore.getState().logout()}
-              className="flex-1 py-3 px-4 hover:bg-red-50 flex items-center justify-center gap-2 transition-colors active:bg-red-100"
-            >
-              <span>🚪</span>
-              <span className="text-sm font-medium text-red-500">Sair</span>
-            </button>
-          </div>
+        <div className="space-y-2 mb-6">
+          <NavLink
+            to="/definicoes"
+            onClick={() => setIsSidebarOpen(false)}
+            className={({ isActive }) =>
+              clsx(
+                'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all',
+                isActive
+                  ? 'bg-background font-bold shadow-sm'
+                  : 'hover:bg-gray-50'
+              )
+            }
+          >
+            <span className="text-xl">⚙️</span>
+            <span className="text-gray-800">Definições</span>
+          </NavLink>
+          <button
+            onClick={() => useStore.getState().logout()}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all hover:bg-red-50 active:bg-red-100"
+          >
+            <span className="text-xl">🚪</span>
+            <span className="text-red-500">Sair</span>
+          </button>
         </div>
 
         {/* Navigation */}

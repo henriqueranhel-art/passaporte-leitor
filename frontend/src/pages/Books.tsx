@@ -724,8 +724,6 @@ export default function BooksPage() {
     enabled: !!familyId,
   });
 
-  const selectedChild = selectedChildId === 'all' ? null : children.find(c => c.id === selectedChildId);
-
   // Calculate counts for current filters
   const counts: FilterCounts = {
     total: books.length,
