@@ -4,6 +4,7 @@ import { readingLogsApi, childrenApi } from '../lib/api';
 import { useFamilyId } from '../lib/store';
 import { Modal, Button } from '../components/ui';
 import { COLORS, MOODS, MoodSelector, MinutesInput } from '../components/reading';
+import { ChildSelector } from '../components/ChildSelector';
 
 // ============================================================================
 // TYPES
@@ -87,6 +88,16 @@ const FilterBar = ({
 
     return (
         <div className="bg-white rounded-2xl p-4 shadow-sm mb-4">
+            {/* Child filter */}
+            <div className="mb-3">
+                <ChildSelector
+                    children={children}
+                    selectedId={selectedChild}
+                    onChange={onChildChange}
+                    allLabel="Família"
+                    allId=""
+                />
+            </div>
             {/* Search bar */}
             <div className="relative mb-3">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
@@ -105,32 +116,6 @@ const FilterBar = ({
                         ✕
                     </button>
                 )}
-            </div>
-
-            {/* Child filter chips */}
-            <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
-                <button
-                    onClick={() => onChildChange('')}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${!selectedChild
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                >
-                    Todas
-                </button>
-                {children.map((child) => (
-                    <button
-                        key={child.id}
-                        onClick={() => onChildChange(child.id)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap flex items-center gap-1 transition-colors ${selectedChild === child.id
-                            ? 'bg-orange-500 text-white'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                    >
-                        <span>{child.avatar}</span>
-                        <span>{child.name}</span>
-                    </button>
-                ))}
             </div>
 
             {/* Date filter toggle */}

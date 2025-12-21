@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useFamilyId } from '../lib/store';
 import { mapApi } from '../lib/api';
+import { ChildSelector } from '../components/ChildSelector';
 
 // ============================================================================
 // TYPES
@@ -72,52 +73,6 @@ interface MapVisualizationProps {
 }
 
 
-
-// ============================================================================
-// CHILD SELECTOR
-// ============================================================================
-
-const ChildSelector = ({ children, selectedId, onChange }: { children: ChildData[]; selectedId: string; onChange: (id: string) => void }) => {
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
-      {/* Opção "Todos" */}
-      <button
-        onClick={() => onChange('all')}
-        className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all flex-shrink-0 ${selectedId === 'all'
-          ? 'bg-orange-100 shadow-sm scale-105'
-          : 'bg-white/80 opacity-70 hover:opacity-100'
-          }`}
-      >
-        <span className="text-xl">👨‍👩‍👧‍👦</span>
-        <span className={`text-sm font-medium ${selectedId === 'all' ? 'text-orange-700' : 'text-gray-600'}`}>
-          Família
-        </span>
-      </button>
-
-      {/* Crianças individuais */}
-      {children.map((child) => {
-        const isSelected = selectedId === child.id;
-        const goalMet = child.todayMinutes >= child.dailyGoal;
-        return (
-          <button
-            key={child.id}
-            onClick={() => onChange(child.id)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all flex-shrink-0 ${isSelected
-              ? 'bg-orange-100 shadow-sm scale-105'
-              : 'bg-white/80 opacity-70 hover:opacity-100'
-              }`}
-          >
-            <span className="text-xl">{child.avatar}</span>
-            <span className={`text-sm font-medium ${isSelected ? 'text-orange-700' : 'text-gray-600'}`}>
-              {child.name}
-            </span>
-            {goalMet && <span className="text-xs">✅</span>}
-          </button>
-        );
-      })}
-    </div>
-  );
-};
 
 // ============================================================================
 // STATS PANEL (shared component) - BELOW THE MAP
@@ -864,6 +819,11 @@ export default function ExplorerMapPage() {
             children={children}
             selectedId={selectedChildId}
             onChange={setSelectedChildId}
+            renderBadge={(child) => {
+              const childData = children.find(c => c.id === child.id);
+              const goalMet = childData && childData.todayMinutes >= childData.dailyGoal;
+              return goalMet ? <span className="text-xs">✅</span> : null;
+            }}
           />
         </div>
       </div>
