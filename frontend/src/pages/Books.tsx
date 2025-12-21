@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { booksApi, childrenApi } from '../lib/api';
 import { useFamilyId } from '../lib/store';
@@ -108,7 +108,7 @@ const ChildSelector = ({ children, selectedId, onChange }: ChildSelectorProps) =
       >
         <span className="text-xl">👨‍👩‍👧‍👦</span>
         <span className={`text-sm font-medium ${selectedId === 'all' ? 'text-orange-700' : 'text-gray-600'}`}>
-          Todos
+          Família
         </span>
       </button>
 
@@ -204,39 +204,28 @@ const FilterTabs = ({ activeFilter, onChange, counts }: FilterTabsProps) => {
 };
 
 // ============================================================================
-// GENRE FILTER
+// GENRE FILTER (Dropdown)
 // ============================================================================
 
 const GenreFilter = ({ activeGenre, onChange }: GenreFilterProps) => {
   const genres = [
-    { id: 'all' as const, name: 'Todos', icon: '🌍', color: COLORS.primary },
+    { id: 'all' as const, name: 'Todos os géneros', icon: '🌍', color: COLORS.primary },
     ...Object.entries(GENRES).map(([id, g]) => ({ id: id as keyof typeof GENRES, ...g }))
   ];
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2">
-      {genres.map((genre) => {
-        const isActive = activeGenre === genre.id;
-
-        return (
-          <button
-            key={genre.id}
-            onClick={() => onChange(genre.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${isActive ? 'shadow-sm' : 'opacity-60 hover:opacity-100'
-              }`}
-            style={{
-              backgroundColor: isActive ? `${genre.color}20` : '#f9fafb',
-              color: genre.color,
-              borderWidth: isActive ? 2 : 0,
-              borderColor: genre.color,
-            }}
-          >
-            <span>{genre.icon}</span>
-            <span>{genre.name}</span>
-          </button>
-        );
-      })}
-    </div>
+    <select
+      value={activeGenre}
+      onChange={(e) => onChange(e.target.value as GenreFilter)}
+      className="flex-1 px-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-orange-400 focus:outline-none bg-white text-sm font-medium"
+      style={{ color: COLORS.text }}
+    >
+      {genres.map((genre) => (
+        <option key={genre.id} value={genre.id}>
+          {genre.icon} {genre.name}
+        </option>
+      ))}
+    </select>
   );
 };
 
@@ -346,12 +335,26 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Editable fields state
-  const [editTitle, setEditTitle] = useState(book?.title || '');
-  const [editAuthor, setEditAuthor] = useState(book?.author || '');
-  const [editGenre, setEditGenre] = useState<GenreFilter>(book?.genre as GenreFilter || 'ADVENTURE');
-  const [editStartDate, setEditStartDate] = useState(book?.startDate || '');
-  const [editTotalPages, setEditTotalPages] = useState(book?.totalPages?.toString() || '');
+  const [editTitle, setEditTitle] = useState('');
+  const [editAuthor, setEditAuthor] = useState('');
+  const [editGenre, setEditGenre] = useState<keyof typeof GENRES>('ADVENTURE');
+  const [editStartDate, setEditStartDate] = useState('');
+  const [editTotalPages, setEditTotalPages] = useState('');
   const [errors, setErrors] = useState<any>({});
+
+  // Sync state with book prop whenever it changes
+  useEffect(() => {
+    if (book) {
+      setEditTitle(book.title || '');
+      setEditAuthor(book.author || '');
+      setEditGenre((book.genre as keyof typeof GENRES) || 'ADVENTURE');
+      setEditStartDate(book.startDate || '');
+      setEditTotalPages(book.totalPages?.toString() || '');
+      setErrors({});
+      setIsEditing(false);
+      setShowDeleteConfirm(false);
+    }
+  }, [book]);
 
   // Update mutations
   const updateBookMutation = useMutation({
@@ -397,7 +400,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
   const handleCancel = () => {
     setEditTitle(book?.title || '');
     setEditAuthor(book?.author || '');
-    setEditGenre(book?.genre as GenreFilter || 'ADVENTURE');
+    setEditGenre((book?.genre as keyof typeof GENRES) || 'ADVENTURE');
     setEditStartDate(book?.startDate || '');
     setEditTotalPages(book?.totalPages?.toString() || '');
     setErrors({});
@@ -450,9 +453,9 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
               <div className="flex flex-wrap gap-2 mb-2">
                 <select
                   value={editGenre}
-                  onChange={(e) => setEditGenre(e.target.value as GenreFilter)}
+                  onChange={(e) => setEditGenre(e.target.value as keyof typeof GENRES)}
                   className="text-xs px-3 py-2 rounded-full border-2 border-gray-200 focus:outline-none focus:border-orange-400"
-                  style={{ color: GENRES[editGenre as keyof typeof GENRES]?.color }}
+                  style={{ color: GENRES[editGenre]?.color }}
                 >
                   {Object.entries(GENRES).map(([key, g]) => (
                     <option key={key} value={key}>{g.icon} {g.name}</option>
@@ -701,7 +704,7 @@ export default function BooksPage() {
   const [sortBy, setSortBy] = useState<SortBy>('recent');
   const [search, setSearch] = useState('');
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+
 
   const { data: children = [] } = useQuery({
     queryKey: ['children', familyId],
@@ -751,24 +754,6 @@ export default function BooksPage() {
             </div>
           )}
 
-          <div className="flex items-center gap-2 mb-3 text-sm text-gray-500">
-            {selectedChild ? (
-              <>
-                <span className="text-lg">{selectedChild.avatar}</span>
-                <span>{selectedChild.name}</span>
-              </>
-            ) : (
-              <>
-                <span className="text-lg">👨‍👩‍👧‍👦</span>
-                <span>Todas as crianças</span>
-              </>
-            )}
-            <span>•</span>
-            <span>{counts.total} livros</span>
-            <span>•</span>
-            <span>{counts.FINISHED} terminados</span>
-          </div>
-
           <div className="mb-3">
             <SearchBar value={search} onChange={setSearch} />
           </div>
@@ -782,24 +767,10 @@ export default function BooksPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between gap-4">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700"
-          >
-            <span>🎯</span>
-            <span>Filtrar por género</span>
-            <span>{showFilters ? '▲' : '▼'}</span>
-          </button>
-
+        <div className="flex gap-3">
+          <GenreFilter activeGenre={genreFilter} onChange={setGenreFilter} />
           <SortDropdown value={sortBy} onChange={setSortBy} />
         </div>
-
-        {showFilters && (
-          <div className="mt-3">
-            <GenreFilter activeGenre={genreFilter} onChange={setGenreFilter} />
-          </div>
-        )}
       </div>
 
       {search && (

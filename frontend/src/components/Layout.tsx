@@ -15,6 +15,7 @@ export default function Layout() {
     { to: '/', icon: '🏠', label: 'Início' },
     { to: '/mapa', icon: '🗺️', label: 'Mapa' },
     { to: '/livros', icon: '📚', label: 'Livros' },
+    { to: '/leituras', icon: '📖', label: 'Leituras' },
     { to: '/conquistas', icon: '🏆', label: 'Conquistas' },
     { to: '/imprimir', icon: '🖨️', label: 'Imprimir' },
   ];
@@ -53,29 +54,48 @@ export default function Layout() {
           </div>
         </div>
 
-        {/* Family Info & Logout */}
-        <div className="p-4 rounded-xl bg-background mb-6">
-          {family ? (
-            <>
-              <p className="text-xs text-gray-500 mb-1">👨‍👩‍👧‍👦 Família</p>
-              <div className="flex justify-between items-center">
-                <p className="font-bold text-sm text-gray-800">{family.name}</p>
-                <button
-                  onClick={() => useStore.getState().logout()}
-                  className="text-xs text-red-400 hover:text-red-600 font-bold"
-                >
-                  Sair
-                </button>
+        {/* Family Info */}
+        {family && (
+          <div className="rounded-2xl overflow-hidden bg-white shadow-sm mb-6">
+            <div className="p-4 flex items-center gap-4">
+              {/* Family avatar */}
+              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-2xl">
+                👨‍👩‍👧‍👦
               </div>
-            </>
-          ) : (
+
+              {/* Family info */}
+              <div className="flex-1">
+                <p className="text-xs text-gray-500">Família</p>
+                <h2 className="font-bold text-gray-800 text-lg">{family.name}</h2>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Settings and Logout */}
+        <div className="rounded-2xl overflow-hidden bg-white shadow-sm border border-gray-100 mb-6">
+          <div className="flex">
+            <NavLink
+              to="/definicoes"
+              onClick={() => setIsSidebarOpen(false)}
+              className={({ isActive }) =>
+                clsx(
+                  'flex-1 py-3 px-4 flex items-center justify-center gap-2 transition-colors border-r border-gray-100',
+                  isActive ? 'bg-gray-100' : 'hover:bg-gray-50 active:bg-gray-100'
+                )
+              }
+            >
+              <span>⚙️</span>
+              <span className="text-sm font-medium text-gray-600">Definições</span>
+            </NavLink>
             <button
               onClick={() => useStore.getState().logout()}
-              className="w-full text-sm text-red-400 hover:text-red-600 font-bold py-2"
+              className="flex-1 py-3 px-4 hover:bg-red-50 flex items-center justify-center gap-2 transition-colors active:bg-red-100"
             >
-              🚪 Sair
+              <span>🚪</span>
+              <span className="text-sm font-medium text-red-500">Sair</span>
             </button>
-          )}
+          </div>
         </div>
 
         {/* Navigation */}
@@ -101,27 +121,8 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* Settings Link - before logout */}
-        <div className="mt-auto mb-4">
-          <NavLink
-            to="/definicoes"
-            onClick={() => setIsSidebarOpen(false)}
-            className={({ isActive }) =>
-              clsx(
-                'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all',
-                isActive
-                  ? 'bg-background font-bold shadow-sm'
-                  : 'hover:bg-gray-50'
-              )
-            }
-          >
-            <span className="text-xl">⚙️</span>
-            <span className="text-gray-800">Definições</span>
-          </NavLink>
-        </div>
-
         {/* Tip */}
-        <div className="p-4 rounded-xl bg-green-50 mt-4">
+        <div className="p-4 rounded-xl bg-green-50 mb-4">
           <p className="text-xs font-medium mb-1 text-green-700">🌿 Dica</p>
           <p className="text-xs text-gray-600">
             O passaporte físico é a estrela! Use esta plataforma apenas para

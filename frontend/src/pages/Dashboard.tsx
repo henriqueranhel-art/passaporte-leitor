@@ -104,6 +104,8 @@ export default function Dashboard() {
           queryClient.invalidateQueries({ queryKey: ['children', familyId] });
           queryClient.invalidateQueries({ queryKey: ['familyBooks'] });
           queryClient.invalidateQueries({ queryKey: ['familyStats'] });
+          queryClient.invalidateQueries({ queryKey: ['reading-sessions'] });
+          queryClient.invalidateQueries({ queryKey: ['reading-sessions-stats'] });
           triggerConfetti();
         }}
       />
@@ -117,6 +119,8 @@ export default function Dashboard() {
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['children', familyId] });
           queryClient.invalidateQueries({ queryKey: ['familyStats'] });
+          queryClient.invalidateQueries({ queryKey: ['reading-sessions'] });
+          queryClient.invalidateQueries({ queryKey: ['reading-sessions-stats'] });
         }}
       />
 

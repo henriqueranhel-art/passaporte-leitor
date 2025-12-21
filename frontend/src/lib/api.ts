@@ -240,6 +240,87 @@ export const readingLogsApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  getStats: (
+    familyId: string,
+    filters?: {
+      childId?: string;
+      search?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    }
+  ) => {
+    const params = new URLSearchParams();
+    if (filters?.childId) params.append('childId', filters.childId);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    const queryString = params.toString();
+    return request<{
+      totalSessions: number;
+      totalMinutes: number;
+      avgMinutes: number;
+    }>(`/reading-logs/stats/${familyId}${queryString ? `?${queryString}` : ''}`);
+  },
+
+  getByFamily: (
+    familyId: string,
+    filters?: {
+      childId?: string;
+      search?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      page?: number;
+      limit?: number;
+    }
+  ) => {
+    const params = new URLSearchParams();
+    if (filters?.childId) params.append('childId', filters.childId);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    const queryString = params.toString();
+    return request<{
+      sessions: Array<{
+        id: string;
+        childId: string;
+        childName: string;
+        childAvatar: string;
+        bookId: string;
+        bookName: string;
+        bookAuthor: string;
+        bookCover: string;
+        date: string;
+        minutes: number;
+        mood: number | null;
+        pagesRead: number;
+      }>;
+      total: number;
+      page: number;
+      totalPages: number;
+    }>(`/reading-logs/family/${familyId}${queryString ? `?${queryString}` : ''}`);
+  },
+
+  update: (
+    id: string,
+    data: {
+      minutes?: number;
+      mood?: number;
+      date?: string;
+      pageEnd?: number;
+    }
+  ) =>
+    request('/reading-logs/' + id, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    request<{ success: boolean }>(`/reading-logs/${id}`, {
+      method: 'DELETE',
+    }),
 };
 
 export { ApiError };
