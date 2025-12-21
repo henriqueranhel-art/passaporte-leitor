@@ -20,13 +20,15 @@ const app = new Hono();
 // ============================================================================
 
 app.use('*', logger());
+
+// Validate CORS_ORIGIN is set
+if (!process.env.CORS_ORIGIN) {
+  throw new Error('CORS_ORIGIN environment variable is required');
+}
+
 app.use('*', cors({
   origin: (origin) => {
-    // Allow localhost for development and Railway production frontend
-    const allowedOrigins = [
-      'http://localhost:5175',
-      'https://passaporte-leitor-frontend-production.up.railway.app'
-    ];
+    const allowedOrigins = process.env.CORS_ORIGIN!.split(',').map(o => o.trim());
 
     // If no origin (like Postman) or origin is in allowed list, allow it
     if (!origin || allowedOrigins.some(allowed => origin.includes(allowed))) {
