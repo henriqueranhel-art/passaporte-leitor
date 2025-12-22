@@ -4,6 +4,7 @@ import { Modal, Button } from '../components/ui';
 import clsx from 'clsx';
 import type { Child } from '../lib/types';
 import { TimeInput, MoodSelector, COLORS } from './reading';
+import { readingLogsApi } from '../lib/api';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -518,7 +519,7 @@ const Step5BookReview = ({ data, onChange, onSubmit, onBack, isLoading }: { data
                     type="text"
                     value={data.favoriteCharacter || ''}
                     onChange={(e) => onChange({ ...data, favoriteCharacter: e.target.value })}
-                    placeholder="Ex: Hermione Granger"
+                    placeholder="Ex: O Raposo"
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-400 focus:outline-none"
                     style={{ color: COLORS.text }}
                 />
@@ -533,7 +534,7 @@ const Step5BookReview = ({ data, onChange, onSubmit, onBack, isLoading }: { data
                 <textarea
                     value={data.review || ''}
                     onChange={(e) => onChange({ ...data, review: e.target.value })}
-                    placeholder="Escreve aqui a tua opinião..."
+                    placeholder="O que mais gostaste? O que aprendeste?"
                     rows={3}
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-400 focus:outline-none resize-none"
                     style={{ color: COLORS.text }}
@@ -620,24 +621,19 @@ export function LogReadingModal({ isOpen, onClose, child, currentBooks, onSucces
 
     const createSessionMutation = useMutation({
         mutationFn: async () => {
-            const response = await fetch('/api/reading-logs', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                },
-                body: JSON.stringify({
-                    childId: child?.id,
-                    bookId: sessionData.bookId,
-                    minutes: sessionData.minutes,
-                    pageEnd: sessionData.pageEnd,
-                    mood: sessionData.mood,
-                    finishedBook: sessionData.finishedBook || false,
-                    date: sessionData.date,
-                })
+            if (!child?.id || !sessionData.bookId || !sessionData.minutes) {
+                throw new Error('Missing required data');
+            }
+
+            return readingLogsApi.create({
+                childId: child.id,
+                bookId: sessionData.bookId,
+                minutes: sessionData.minutes,
+                pageEnd: sessionData.pageEnd,
+                mood: sessionData.mood,
+                finishedBook: sessionData.finishedBook || false,
+                date: sessionData.date,
             });
-            if (!response.ok) throw new Error('Failed to create session');
-            return response.json();
         }
     });
 
