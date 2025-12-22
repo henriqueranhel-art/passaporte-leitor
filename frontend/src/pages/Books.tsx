@@ -243,7 +243,7 @@ const CompactBookCard = ({ book, onClick, showChild, children }: CompactBookCard
           </span>
         )}
         {book.status === 'finished' && book.rating && (
-          <span className="text-xs">{'⭐'.repeat(Math.min(book.rating, 3))}</span>
+          <span className="text-xs">{'⭐'.repeat(book.rating)}</span>
         )}
         {book.status === 'to-read' && book.totalPages && (
           <span className="text-xs text-gray-400">{book.totalPages}p</span>

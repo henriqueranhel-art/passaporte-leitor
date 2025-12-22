@@ -235,6 +235,9 @@ export const readingLogsApi = {
     mood?: number;
     finishedBook?: boolean;
     date?: string;
+    rating?: number;
+    favoriteCharacter?: string;
+    notes?: string;
   }) =>
     request('/reading-logs', {
       method: 'POST',

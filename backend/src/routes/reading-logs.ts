@@ -15,7 +15,11 @@ const createSessionSchema = z.object({
     // Accept date in YYYY-MM-DD format and transform to ISO datetime for proper timestamp
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar no formato YYYY-MM-DD')
         .transform(dateStr => `${dateStr}T00:00:00.000Z`)
-        .optional()
+        .optional(),
+    // Review fields (only used when finishedBook is true)
+    rating: z.number().int().min(1).max(5).optional(),
+    favoriteCharacter: z.string().optional(),
+    notes: z.string().optional(),
 });
 
 const updateSessionSchema = z.object({
@@ -37,7 +41,7 @@ readingLogRoutes.post('/', async (c) => {
         return c.json({ error: 'Dados inválidos', details: validation.error.issues }, 400);
     }
 
-    const { childId, bookId, minutes, pageEnd, mood, finishedBook, date } = validation.data;
+    const { childId, bookId, minutes, pageEnd, mood, finishedBook, date, rating, favoriteCharacter, notes } = validation.data;
 
     // Verify child exists
     const child = await prisma.child.findUnique({ where: { id: childId } });
@@ -63,14 +67,17 @@ readingLogRoutes.post('/', async (c) => {
         }
     });
 
-    // If book was finished, update book status
+    // If book was finished, update book status and review
     if (finishedBook && book.status !== BookStatus.FINISHED) {
         await prisma.book.update({
             where: { id: bookId },
             data: {
                 status: BookStatus.FINISHED,
                 finishDate: new Date(),
-                currentPage: pageEnd || book.totalPages || undefined
+                currentPage: pageEnd || book.totalPages || undefined,
+                rating: rating || undefined,
+                favoriteCharacter: favoriteCharacter || undefined,
+                notes: notes || undefined,
             }
         });
     } else if (pageEnd && book.status === BookStatus.READING) {

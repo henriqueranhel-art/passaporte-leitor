@@ -407,9 +407,7 @@ export function ChildCard({ child, onAddBook, onLogReading, onViewDetails }: Chi
                             <p className="text-xs text-gray-500 truncate">{child.lastFinishedBook.author}</p>
                         </div>
                         <div className="flex flex-col items-center">
-                            <span className="text-2xl">
-                                {child.lastFinishedBook.rating === 3 ? '😍' : child.lastFinishedBook.rating === 2 ? '🙂' : '😐'}
-                            </span>
+                            <span className="text-xs">{'⭐'.repeat(child.lastFinishedBook.rating)}</span>
                             <span className="text-xs text-gray-400">
                                 {new Date(child.lastFinishedBook.finishedAt).toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}
                             </span>

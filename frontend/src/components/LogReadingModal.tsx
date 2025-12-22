@@ -625,6 +625,7 @@ export function LogReadingModal({ isOpen, onClose, child, currentBooks, onSucces
                 throw new Error('Missing required data');
             }
 
+
             return readingLogsApi.create({
                 childId: child.id,
                 bookId: sessionData.bookId,
@@ -633,6 +634,12 @@ export function LogReadingModal({ isOpen, onClose, child, currentBooks, onSucces
                 mood: sessionData.mood,
                 finishedBook: sessionData.finishedBook || false,
                 date: sessionData.date,
+                // Include review fields when book is finished
+                ...(sessionData.finishedBook && {
+                    rating: sessionData.rating,
+                    favoriteCharacter: sessionData.favoriteCharacter,
+                    notes: sessionData.review,
+                }),
             });
         }
     });
