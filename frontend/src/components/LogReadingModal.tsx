@@ -96,7 +96,7 @@ const DateSelector = ({ value, onChange }: { value: string; onChange: (date: str
     return (
         <div className="mb-6">
             <label className="flex items-center gap-1 text-sm font-medium mb-3" style={{ color: COLORS.text }}>
-                📅 Quando leste?
+                📅 Dia da leitura?
             </label>
 
             {/* Recent days grid */}
@@ -394,21 +394,6 @@ const Step3ReadingSession = ({ data, onChange, onNext, onBack }: StepProps) => {
                 onChange={(mood) => onChange({ ...data, mood })}
             />
 
-            {/* Page Progress */}
-            <PageUpdateInput
-                currentPage={book?.currentPage}
-                totalPages={book?.totalPages}
-                newPage={data.pageEnd || book?.currentPage || 0}
-                onChange={(page) => onChange({ ...data, pageEnd: page })}
-            />
-
-            <button
-                onClick={() => onChange({ ...data, pageEnd: undefined })}
-                className="w-full text-sm text-gray-500 hover:text-gray-700"
-            >
-                Não sei / Não quero registar páginas
-            </button>
-
             <div className="flex gap-3 pt-4">
                 <Button variant="secondary" onClick={onBack}>
                     ← Voltar
@@ -436,7 +421,6 @@ const Step4FinishedBook = ({ data, onChange, onNext, onBack }: StepProps) => {
             {/* Book info */}
             {book && (
                 <div className="bg-gray-50 rounded-xl p-4 mb-6 text-center">
-                    <span className="text-4xl block mb-2">�</span>
                     <p className="font-bold text-gray-800">{book.title}</p>
                     <p className="text-sm text-gray-500">{book.author}</p>
                     {book.totalPages && data.pageEnd && (
@@ -474,6 +458,25 @@ const Step4FinishedBook = ({ data, onChange, onNext, onBack }: StepProps) => {
                     <span className="font-bold text-gray-800">Ainda não</span>
                 </button>
             </div>
+
+            {/* Page Progress - only show if book is NOT finished */}
+            {data.finishedBook === false && (
+                <>
+                    <PageUpdateInput
+                        currentPage={book?.currentPage}
+                        totalPages={book?.totalPages}
+                        newPage={data.pageEnd || book?.currentPage || 0}
+                        onChange={(page) => onChange({ ...data, pageEnd: page })}
+                    />
+
+                    <button
+                        onClick={() => onChange({ ...data, pageEnd: undefined })}
+                        className="w-full text-sm text-gray-500 hover:text-gray-700"
+                    >
+                        Não sei / Não quero registar páginas
+                    </button>
+                </>
+            )}
 
             <div className="flex gap-3 pt-4">
                 <Button variant="secondary" onClick={onBack}>
