@@ -819,11 +819,6 @@ export default function ExplorerMapPage() {
             children={children}
             selectedId={selectedChildId}
             onChange={setSelectedChildId}
-            renderBadge={(child) => {
-              const childData = children.find(c => c.id === child.id);
-              const goalMet = childData && childData.todayMinutes >= childData.dailyGoal;
-              return goalMet ? <span className="text-xs">✅</span> : null;
-            }}
           />
         </div>
       </div>

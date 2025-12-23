@@ -315,7 +315,7 @@ const Step3Review = ({ data, onChange, onNext, onBack }: any) => {
 // ============================================================================
 // STEP 4: READING SESSION
 // ============================================================================
-const Step4ReadingSession = ({ data, onChange, onSubmit, isLoading }: any) => {
+const Step4ReadingSession = ({ data, onChange, onSubmit, isLoading, onBack }: any) => {
     return (
         <div className="space-y-6">
             <h2 className="text-lg font-bold text-gray-800 mb-4">⏱️ Registo de Leitura</h2>
@@ -331,9 +331,14 @@ const Step4ReadingSession = ({ data, onChange, onSubmit, isLoading }: any) => {
                 onChange={(val) => onChange({ ...data, mood: val })}
             />
 
-            <Button onClick={onSubmit} variant="success" disabled={isLoading} className="w-full">
-                {isLoading ? 'A Guardar...' : '✓ Concluir 🎉'}
-            </Button>
+            <div className="flex justify-between pt-4 border-t border-gray-100">
+                <Button variant="secondary" onClick={onBack}>
+                    ← Voltar
+                </Button>
+                <Button onClick={onSubmit} variant="success" disabled={isLoading} className="w-full">
+                    {isLoading ? 'A Guardar...' : '✓ Concluir 🎉'}
+                </Button>
+            </div>
         </div>
     );
 };
@@ -417,14 +422,15 @@ export function AddBookModal({ isOpen, onClose, child, onSuccess }: AddBookModal
         return 3;
     };
 
-    const handleSubmit = async (bookId?: string) => {
+    const handleSubmit = async (existingBookId?: string) => {
         if (!child || !bookData.title || !bookData.genre) return;
 
         try {
-            let createdBookId = bookId;
+            let bookId = existingBookId;
 
-            // Create book if not already created
-            if (!createdBookId) {
+            // Only create book if it doesn't already exist
+            if (!bookId) {
+                console.log('Creating new book...');
                 const result = await createBookMutation.mutateAsync({
                     childId: child.id,
                     title: bookData.title,
@@ -440,19 +446,23 @@ export function AddBookModal({ isOpen, onClose, child, onSuccess }: AddBookModal
                     favoriteCharacter: bookData.favoriteCharacter,
                     dateRead: new Date().toISOString()
                 } as CreateBookInput);
-                createdBookId = result.book.id;
+                bookId = result.book.id;
+                console.log('Book created with ID:', bookId);
+            } else {
+                console.log('Using existing book ID:', bookId);
             }
 
             // Create reading session if applicable
-            if ((bookData.readToday || isEndDateToday) && bookData.readingMinutes && createdBookId) {
+            if ((bookData.readToday || isEndDateToday) && bookData.readingMinutes && bookId) {
+                console.log('Creating reading session for book:', bookId);
                 await createReadingLogMutation.mutateAsync({
                     childId: child.id,
-                    bookId: createdBookId,
+                    bookId: bookId,
                     minutes: bookData.readingMinutes,
                     pageEnd: bookData.currentPage,
                     mood: bookData.mood || undefined,
                     finishedBook: bookData.status === 'finished' && isEndDateToday,
-                    date: new Date().toISOString(),
+                    date: new Date().toISOString().split('T')[0],
                 });
             }
 
@@ -481,19 +491,24 @@ export function AddBookModal({ isOpen, onClose, child, onSuccess }: AddBookModal
                     await handleSubmit();
                     setStep(5);
                 } else if (bookData.readToday === true) {
-                    // Create book first, then go to reading session
-                    const result = await createBookMutation.mutateAsync({
-                        childId: child!.id,
-                        title: bookData.title!,
-                        author: bookData.author || "Desconhecido",
-                        genre: bookData.genre as Genre,
-                        totalPages: bookData.totalPages,
-                        status: bookData.status,
-                        currentPage: bookData.currentPage,
-                        startDate: bookData.startDate ? new Date(bookData.startDate).toISOString() : undefined,
-                        dateRead: new Date().toISOString()
-                    } as CreateBookInput);
-                    setBookData({ ...bookData, id: result.book.id } as any);
+                    // Only create book if it doesn't already exist
+                    if (!(bookData as any).id) {
+                        console.log('Creating book for reading session...');
+                        const result = await createBookMutation.mutateAsync({
+                            childId: child!.id,
+                            title: bookData.title!,
+                            author: bookData.author || "Desconhecido",
+                            genre: bookData.genre as Genre,
+                            totalPages: bookData.totalPages,
+                            status: bookData.status,
+                            currentPage: bookData.currentPage,
+                            startDate: bookData.startDate ? new Date(bookData.startDate).toISOString() : undefined,
+                            dateRead: new Date().toISOString()
+                        } as CreateBookInput);
+                        setBookData({ ...bookData, id: result.book.id } as any);
+                    } else {
+                        console.log('Book already exists, skipping creation');
+                    }
                     setStep(4);
                 }
             } else if (bookData.status === 'finished') {
@@ -501,23 +516,28 @@ export function AddBookModal({ isOpen, onClose, child, onSuccess }: AddBookModal
                     await handleSubmit();
                     setStep(5);
                 } else {
-                    // Create book first, then go to reading session
-                    const result = await createBookMutation.mutateAsync({
-                        childId: child!.id,
-                        title: bookData.title!,
-                        author: bookData.author || "Desconhecido",
-                        genre: bookData.genre as Genre,
-                        totalPages: bookData.totalPages,
-                        status: bookData.status,
-                        currentPage: bookData.currentPage,
-                        startDate: bookData.startDate ? new Date(bookData.startDate).toISOString() : undefined,
-                        finishDate: bookData.finishDate ? new Date(bookData.finishDate).toISOString() : undefined,
-                        rating: bookData.rating,
-                        notes: bookData.notes,
-                        favoriteCharacter: bookData.favoriteCharacter,
-                        dateRead: new Date().toISOString()
-                    } as CreateBookInput);
-                    setBookData({ ...bookData, id: result.book.id } as any);
+                    // Only create book if it doesn't already exist
+                    if (!(bookData as any).id) {
+                        console.log('Creating finished book for reading session...');
+                        const result = await createBookMutation.mutateAsync({
+                            childId: child!.id,
+                            title: bookData.title!,
+                            author: bookData.author || "Desconhecido",
+                            genre: bookData.genre as Genre,
+                            totalPages: bookData.totalPages,
+                            status: bookData.status,
+                            currentPage: bookData.currentPage,
+                            startDate: bookData.startDate ? new Date(bookData.startDate).toISOString() : undefined,
+                            finishDate: bookData.finishDate ? new Date(bookData.finishDate).toISOString() : undefined,
+                            rating: bookData.rating,
+                            notes: bookData.notes,
+                            favoriteCharacter: bookData.favoriteCharacter,
+                            dateRead: new Date().toISOString()
+                        } as CreateBookInput);
+                        setBookData({ ...bookData, id: result.book.id } as any);
+                    } else {
+                        console.log('Book already exists, skipping creation');
+                    }
                     setStep(4);
                 }
             }
@@ -602,6 +622,7 @@ export function AddBookModal({ isOpen, onClose, child, onSuccess }: AddBookModal
                     onChange={setBookData}
                     onSubmit={handleStepNavigation}
                     isLoading={createReadingLogMutation.isPending}
+                    onBack={() => setStep(3)}
                 />
             )}
 

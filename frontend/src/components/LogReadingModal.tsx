@@ -502,7 +502,7 @@ const Step5BookReview = ({ data, onChange, onSubmit, onBack, isLoading }: { data
         <div className="space-y-6">
             <div className="text-center mb-4">
                 <h3 className="text-lg font-bold" style={{ color: COLORS.text }}>
-                    🎉 Parabéns! Review do Livro
+                    🎉 Parabéns!
                 </h3>
             </div>
 
