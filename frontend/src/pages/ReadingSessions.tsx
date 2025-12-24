@@ -667,26 +667,29 @@ export default function ReadingSessions() {
     return (
         <div className="min-h-screen" style={{ backgroundColor: COLORS.background }}>
             {/* Header */}
-            <div className="bg-white border-b sticky top-0 z-10 px-4 py-4">
-                <div className="max-w-2xl mx-auto">
-                    <h1 className="text-xl font-bold text-gray-800">📚 Leituras</h1>
+            <div className="bg-white border-b sticky top-0 z-10" style={{ borderColor: COLORS.border }}>
+                <div className="max-w-2xl mx-auto px-4 py-4">
+
+                    <div className="max-w-2xl mx-auto">
+                        <h1 className="text-xl font-bold text-gray-800">📚 Leituras</h1>
+                    </div>
+
+                    {/* Filters */}
+                    <FilterBar
+                        children={children}
+                        selectedChild={selectedChild}
+                        onChildChange={handleFilterChange(setSelectedChild)}
+                        searchQuery={searchQuery}
+                        onSearchChange={handleFilterChange(setSearchQuery)}
+                        dateFrom={dateFrom}
+                        dateTo={dateTo}
+                        onDateFromChange={handleFilterChange(setDateFrom)}
+                        onDateToChange={handleFilterChange(setDateTo)}
+                        onClearFilters={clearFilters}
+                        hasActiveFilters={hasActiveFilters}
+                    />
+
                 </div>
-
-                {/* Filters */}
-                <FilterBar
-                    children={children}
-                    selectedChild={selectedChild}
-                    onChildChange={handleFilterChange(setSelectedChild)}
-                    searchQuery={searchQuery}
-                    onSearchChange={handleFilterChange(setSearchQuery)}
-                    dateFrom={dateFrom}
-                    dateTo={dateTo}
-                    onDateFromChange={handleFilterChange(setDateFrom)}
-                    onDateToChange={handleFilterChange(setDateTo)}
-                    onClearFilters={clearFilters}
-                    hasActiveFilters={hasActiveFilters}
-                />
-
             </div>
 
             {/* Content */}
