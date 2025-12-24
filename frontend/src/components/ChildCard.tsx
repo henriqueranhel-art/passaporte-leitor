@@ -180,10 +180,9 @@ export interface ChildCardProps {
     child: Child;
     onAddBook: () => void;
     onLogReading: () => void;
-    onViewDetails: () => void;
 }
 
-export function ChildCard({ child, onAddBook, onLogReading, onViewDetails }: ChildCardProps) {
+export function ChildCard({ child, onAddBook, onLogReading }: ChildCardProps) {
     const [showAllBooks, setShowAllBooks] = useState(false);
 
     const levelCategory = (child.levelCategory || 'EXPLORERS') as LevelCategory;
@@ -428,14 +427,6 @@ export function ChildCard({ child, onAddBook, onLogReading, onViewDetails }: Chi
                     >
                         <span>📖</span>
                         <span>Adicionar Livro</span>
-                    </button>
-                    <button
-                        onClick={onViewDetails}
-                        className="px-5 py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-white hover:shadow-md transition-all active:scale-98"
-                        style={{ backgroundColor: COLORS.secondary }}
-                    >
-                        <span>📊</span>
-                        <span>Detalhes</span>
                     </button>
                 </div>
             </div>

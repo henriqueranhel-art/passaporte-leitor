@@ -85,7 +85,6 @@ export default function Dashboard() {
                   setSelectedChild(child.id);
                   setShowLogReading(true);
                 }}
-                onViewDetails={() => setSelectedChild(child.id)} // Assuming this is the desired behavior for now, as `navigate` is not defined in the provided context
               />
             );
           })}

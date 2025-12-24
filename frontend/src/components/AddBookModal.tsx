@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { booksApi, readingLogsApi } from '../lib/api';
 import { Modal, Button, Input } from './ui';
 import { GENRES, type Genre, type CreateBookInput } from '../lib/types';
@@ -383,6 +383,7 @@ interface AddBookModalProps {
 }
 
 export function AddBookModal({ isOpen, onClose, child, onSuccess }: AddBookModalProps) {
+    const queryClient = useQueryClient();
     const [step, setStep] = useState(1);
     const [bookData, setBookData] = useState<Partial<CreateBookInput & { readToday: boolean | null; readingMinutes: number; mood: number }>>({
         status: 'to-read',
@@ -506,6 +507,8 @@ export function AddBookModal({ isOpen, onClose, child, onSuccess }: AddBookModal
                             dateRead: new Date().toISOString()
                         } as CreateBookInput);
                         setBookData({ ...bookData, id: result.book.id } as any);
+                        // Invalidate cache immediately so child card updates even if modal is closed
+                        queryClient.invalidateQueries({ queryKey: ['children'] });
                     } else {
                         console.log('Book already exists, skipping creation');
                     }
@@ -535,6 +538,8 @@ export function AddBookModal({ isOpen, onClose, child, onSuccess }: AddBookModal
                             dateRead: new Date().toISOString()
                         } as CreateBookInput);
                         setBookData({ ...bookData, id: result.book.id } as any);
+                        // Invalidate cache immediately so child card updates even if modal is closed
+                        queryClient.invalidateQueries({ queryKey: ['children'] });
                     } else {
                         console.log('Book already exists, skipping creation');
                     }

@@ -326,6 +326,7 @@ const BookDetailModal = ({ book, isOpen, onClose }: BookDetailModalProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['childBooks'] });
+      queryClient.invalidateQueries({ queryKey: ['children'] });
       queryClient.invalidateQueries({ queryKey: ['familyStats'] });
       onClose();
     },
