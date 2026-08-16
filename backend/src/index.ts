@@ -14,6 +14,7 @@ import { statsRoutes } from './routes/stats.js';
 import { authRoutes } from './routes/auth.js';
 import { readingLogRoutes } from './routes/reading-logs.js';
 import { mapRoutes } from './routes/map.js';
+import { schoolRoutes } from './routes/school.js';
 
 const app = new Hono();
 
@@ -86,6 +87,10 @@ const api = new Hono();
 
 // Public routes (no auth required)
 api.route('/auth', authRoutes);
+
+// School admin routes — usam o seu próprio middleware (schoolAdminMiddleware),
+// por isso são montadas antes do authMiddleware de família.
+api.route('/school', schoolRoutes);
 
 // Protected routes (auth required)
 api.use('*', authMiddleware);

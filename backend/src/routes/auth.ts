@@ -40,11 +40,14 @@ app.post('/check-email', async (c) => {
             return c.json({ error: 'Email required' }, 400);
         }
 
-        const family = await prisma.family.findUnique({
-            where: { email },
-        });
+        // Email existe se pertencer a uma família OU a um administrador escolar
+        // (ambos usam o mesmo ecrã de login).
+        const [family, schoolAdmin] = await Promise.all([
+            prisma.family.findUnique({ where: { email }, select: { id: true } }),
+            prisma.schoolAdmin.findUnique({ where: { email }, select: { id: true } }),
+        ]);
 
-        return c.json({ exists: !!family });
+        return c.json({ exists: !!family || !!schoolAdmin });
     } catch (error) {
         console.error('Check email error:', error);
         return c.json({ error: 'Internal server error' }, 500);
@@ -92,10 +95,11 @@ app.post('/register', async (c) => {
             return { family, child: newChild };
         });
 
-        const token = jwt.sign({ familyId: result.family.id }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ familyId: result.family.id, type: 'family' }, JWT_SECRET, { expiresIn: '7d' });
 
         return c.json({
             token,
+            type: 'family',
             family: {
                 id: result.family.id,
                 name: result.family.name,
@@ -119,26 +123,40 @@ app.post('/login', async (c) => {
         const body = await c.req.json();
         const { email, password } = loginSchema.parse(body);
 
+        // 1. Tentar autenticar como família
         const family = await prisma.family.findUnique({ where: { email } });
-        if (!family || !family.password) {
-            return c.json({ error: 'Invalid credentials' }, 401);
+        if (family && family.password && (await bcrypt.compare(password, family.password))) {
+            const token = jwt.sign({ familyId: family.id, type: 'family' }, JWT_SECRET, { expiresIn: '7d' });
+
+            return c.json({
+                token,
+                type: 'family',
+                family: {
+                    id: family.id,
+                    name: family.name,
+                    email: family.email,
+                },
+            });
         }
 
-        const isValid = await bcrypt.compare(password, family.password);
-        if (!isValid) {
-            return c.json({ error: 'Invalid credentials' }, 401);
+        // 2. Caso contrário, tentar autenticar como administrador escolar (mesmo login)
+        const schoolAdmin = await prisma.schoolAdmin.findUnique({ where: { email } });
+        if (schoolAdmin && (await bcrypt.compare(password, schoolAdmin.password))) {
+            const token = jwt.sign({ schoolAdminId: schoolAdmin.id, type: 'school_admin' }, JWT_SECRET, { expiresIn: '7d' });
+
+            return c.json({
+                token,
+                type: 'school_admin',
+                schoolAdmin: {
+                    id: schoolAdmin.id,
+                    name: schoolAdmin.name,
+                    email: schoolAdmin.email,
+                },
+            });
         }
 
-        const token = jwt.sign({ familyId: family.id }, JWT_SECRET, { expiresIn: '7d' });
-
-        return c.json({
-            token,
-            family: {
-                id: family.id,
-                name: family.name,
-                email: family.email,
-            },
-        });
+        // 3. Nenhum dos dois — credenciais inválidas
+        return c.json({ error: 'Invalid credentials' }, 401);
 
     } catch (error) {
         if (error instanceof z.ZodError) {

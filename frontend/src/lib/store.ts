@@ -1,13 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Family, Child, Achievement } from './types';
+import type { Family, Child, Achievement, SchoolAdmin, UserType } from './types';
 
 interface AppState {
+  // Account type
+  userType: UserType | null;
+
   // Family data
   familyId: string | null;
   family: Family | null;
   children: Child[];
   selectedChildId: string | null;
+
+  // School admin data
+  schoolAdmin: SchoolAdmin | null;
 
   // UI state
   isOnboardingComplete: boolean;
@@ -17,6 +23,7 @@ interface AppState {
   // Actions
   setFamily: (family: Family) => void;
   setFamilyId: (id: string) => void;
+  setSchoolAdmin: (admin: SchoolAdmin) => void;
   setChildren: (children: Child[]) => void;
   addChild: (child: Child) => void;
   updateChild: (id: string, data: Partial<Child>) => void;
@@ -32,10 +39,12 @@ interface AppState {
 }
 
 const initialState = {
+  userType: null,
   familyId: null,
   family: null,
   children: [],
   selectedChildId: null,
+  schoolAdmin: null,
   isOnboardingComplete: false,
   showConfetti: false,
   recentAchievements: [],
@@ -46,9 +55,11 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       ...initialState,
 
-      setFamily: (family) => set({ family, familyId: family.id }),
+      setFamily: (family) => set({ family, familyId: family.id, userType: 'family' }),
 
       setFamilyId: (id) => set({ familyId: id }),
+
+      setSchoolAdmin: (admin) => set({ schoolAdmin: admin, userType: 'school_admin' }),
 
       setChildren: (children) => {
         set({ children });
@@ -118,8 +129,10 @@ export const useStore = create<AppState>()(
     {
       name: 'passaporte-leitor-storage',
       partialize: (state) => ({
+        userType: state.userType,
         familyId: state.familyId,
         selectedChildId: state.selectedChildId,
+        schoolAdmin: state.schoolAdmin,
         isOnboardingComplete: state.isOnboardingComplete,
       }),
     }
@@ -127,6 +140,8 @@ export const useStore = create<AppState>()(
 );
 
 // Selectors
+export const useUserType = () => useStore((state) => state.userType);
+export const useSchoolAdmin = () => useStore((state) => state.schoolAdmin);
 export const useFamily = () => useStore((state) => state.family);
 export const useFamilyId = () => useStore((state) => state.familyId);
 export const useChildren = () => useStore((state) => state.children);

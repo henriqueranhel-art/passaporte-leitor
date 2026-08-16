@@ -12,7 +12,8 @@
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate dev",
     "db:studio": "npx prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "create:school-admin": "tsx scripts/create-school-admin.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.8.0",

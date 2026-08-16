@@ -83,6 +83,7 @@ export interface Child {
   }[];
   currentBooks: {
     id: string;
+    status: 'reading' | 'to-read';
     title: string;
     author: string;
     genre: Genre;
@@ -155,6 +156,45 @@ export interface Achievement {
   requirements: Record<string, unknown>;
   earned?: boolean;
   earnedAt?: string;
+}
+
+// ============================================================================
+// ADMINISTRAÇÃO ESCOLAR
+// ============================================================================
+
+export type UserType = 'family' | 'school_admin';
+
+export interface SchoolAdmin {
+  id: string;
+  name: string;
+  email: string;
+  // Âmbito derivado das escolas ligadas (via getAccount). Ausente no login.
+  concelho?: string | null;
+  agrupamento?: string | null;
+}
+
+export interface Escola {
+  id: string;
+  concelho: string;
+  agrupamento: string;
+  nome: string;
+  turmaCount?: number;
+}
+
+export interface Turma {
+  id: string;
+  escolaId: string;
+  nome: string;
+  professor: string;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TurmaInput {
+  nome: string;
+  professor: string;
+  email: string;
 }
 
 export interface ChildAchievement {

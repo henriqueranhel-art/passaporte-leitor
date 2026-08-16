@@ -195,6 +195,7 @@ childRoutes.get('/family/:familyId', async (c) => {
     // 4. Current Books — "a ler" e "quero ler" (para permitir registar leitura)
     const currentBooks = child.childBooks.filter((b: any) => b.status === 'reading' || b.status === 'to-read').map((b: any) => ({
       id: b.id,
+      status: b.status,
       title: b.book.title,
       author: b.book.author,
       genre: b.book.genre,

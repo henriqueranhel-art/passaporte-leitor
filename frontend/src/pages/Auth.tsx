@@ -318,7 +318,7 @@ const RegisterScreen = ({ email, onBack, onRegister }: { email: string, onBack: 
 export default function AuthPage() {
     const [screen, setScreen] = useState<'email' | 'login' | 'register'>('email');
     const [email, setEmail] = useState('');
-    const { setToken, setFamily } = useStore();
+    const { setToken, setFamily, setSchoolAdmin } = useStore();
     const navigate = useNavigate();
 
     const handleEmailContinue = (emailValue: string, exists: boolean) => {
@@ -328,8 +328,16 @@ export default function AuthPage() {
 
     const handleSuccess = (data: any) => {
         setToken(data.token);
+
+        // Administrador escolar → área de gestão de turmas
+        if (data.type === 'school_admin') {
+            setSchoolAdmin(data.schoolAdmin);
+            navigate('/escola');
+            return;
+        }
+
+        // Família → dashboard
         if (data.family) setFamily(data.family);
-        // Redirect to dashboard
         navigate('/dashboard');
     };
 

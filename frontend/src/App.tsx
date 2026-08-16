@@ -1,7 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useStore, useIsOnboardingComplete, useFamilyId, useShowConfetti } from './lib/store';
+import { useStore, useIsOnboardingComplete, useFamilyId, useShowConfetti, useUserType } from './lib/store';
 import { familyApi, childrenApi } from './lib/api';
 
 // Components (loaded immediately - needed for layout)
@@ -18,19 +18,22 @@ const MapPage = lazy(() => import('./pages/Map'));
 const AchievementsPage = lazy(() => import('./pages/Achievements'));
 const PrintPage = lazy(() => import('./pages/Print'));
 const Settings = lazy(() => import('./pages/Settings'));
+const SchoolAdminPage = lazy(() => import('./pages/SchoolAdmin'));
 
 export default function App() {
   const location = useLocation();
   const isOnboardingComplete = useIsOnboardingComplete();
   const familyId = useFamilyId();
+  const userType = useUserType();
   const showConfetti = useShowConfetti();
   const { setFamily, setChildren, logout } = useStore();
 
   const isAuthPage = location.pathname === '/auth';
   const hasToken = !!localStorage.getItem('authToken');
+  const isSchoolAdmin = userType === 'school_admin';
 
-  // Only fetch data when authenticated and not on auth page
-  const shouldFetchData = !!familyId && isOnboardingComplete && hasToken && !isAuthPage;
+  // Only fetch data when authenticated as a family and not on auth page
+  const shouldFetchData = !isSchoolAdmin && !!familyId && isOnboardingComplete && hasToken && !isAuthPage;
 
   // Fetch family data if we have an ID
   const { data: familyData, isLoading: familyLoading, error: familyError } = useQuery({
@@ -84,6 +87,19 @@ export default function App() {
         <Routes>
           <Route path="/auth" element={<AuthPage />} />
           <Route path="*" element={<Navigate to="/auth" replace />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+
+  // School admin: área própria de gestão de turmas (sem dados de família)
+  if (isSchoolAdmin) {
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <Routes>
+          <Route path="/escola" element={<SchoolAdminPage />} />
+          <Route path="/auth" element={<Navigate to="/escola" replace />} />
+          <Route path="*" element={<Navigate to="/escola" replace />} />
         </Routes>
       </Suspense>
     );

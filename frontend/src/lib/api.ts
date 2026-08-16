@@ -14,6 +14,10 @@ import type {
   UpdateBookInput,
   RegisterInput,
   Genre,
+  SchoolAdmin,
+  Escola,
+  Turma,
+  TurmaInput,
 } from './types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
@@ -73,9 +77,65 @@ export const authApi = {
     }),
 
   login: (email: string, password: string) =>
-    request<{ token: string; family: Family }>('/auth/login', {
+    request<
+      | { token: string; type: 'family'; family: Family }
+      | { token: string; type: 'school_admin'; schoolAdmin: SchoolAdmin }
+    >('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
+    }),
+};
+
+// ============================================================================
+// SCHOOL ADMIN API
+// ============================================================================
+
+export const schoolApi = {
+  getAccount: () => request<SchoolAdmin>('/school/account'),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ success: boolean }>('/school/account/password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+
+  listEscolas: () => request<{ escolas: Escola[] }>('/school/escolas'),
+
+  createEscola: (nome: string) =>
+    request<Escola>('/school/escolas', {
+      method: 'POST',
+      body: JSON.stringify({ nome }),
+    }),
+
+  updateEscola: (id: string, nome: string) =>
+    request<Escola>(`/school/escolas/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ nome }),
+    }),
+
+  deleteEscola: (id: string) =>
+    request<{ success: boolean }>(`/school/escolas/${id}`, {
+      method: 'DELETE',
+    }),
+
+  listTurmas: (escolaId: string) =>
+    request<{ turmas: Turma[] }>(`/school/escolas/${escolaId}/turmas`),
+
+  createTurma: (escolaId: string, data: TurmaInput) =>
+    request<Turma>(`/school/escolas/${escolaId}/turmas`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateTurma: (id: string, data: TurmaInput) =>
+    request<Turma>(`/school/turmas/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteTurma: (id: string) =>
+    request<{ success: boolean }>(`/school/turmas/${id}`, {
+      method: 'DELETE',
     }),
 };
 

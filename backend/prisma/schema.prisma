@@ -193,6 +193,74 @@ enum AchievementCategory {
 }
 
 // ============================================================================
+// ADMINISTRAÇÃO ESCOLAR
+// ============================================================================
+
+// Conta de administrador escolar (separada das famílias).
+// Criada manualmente (ver scripts/create-school-admin.ts).
+// O âmbito do admin (agrupamento/concelho) NÃO é guardado aqui — deriva-se das
+// escolas a que está ligado via SchoolAdminEscola -> Escola.
+model SchoolAdmin {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String // Hashed (bcrypt, 10 rounds)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  escolas SchoolAdminEscola[]
+
+  @@map("school_admins")
+}
+
+// Escola: concelho + agrupamento + nome (modelo híbrido pragmático).
+model Escola {
+  id          String   @id @default(cuid())
+  concelho    String
+  agrupamento String
+  nome        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  turmas Turma[]
+  admins SchoolAdminEscola[]
+
+  @@index([agrupamento])
+  @@map("escolas")
+}
+
+// Relação N:N admin <-> escola (um admin pode gerir várias escolas).
+model SchoolAdminEscola {
+  id            String   @id @default(cuid())
+  schoolAdminId String   @map("school_admin_id")
+  escolaId      String   @map("escola_id")
+  createdAt     DateTime @default(now())
+
+  schoolAdmin SchoolAdmin @relation(fields: [schoolAdminId], references: [id], onDelete: Cascade)
+  escola      Escola      @relation(fields: [escolaId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolAdminId, escolaId])
+  @@index([escolaId])
+  @@map("school_admin_escolas")
+}
+
+// Turma de uma escola, com o professor responsável e o seu email.
+model Turma {
+  id        String   @id @default(cuid())
+  escolaId  String   @map("escola_id")
+  nome      String // Ex: "3.º A"
+  professor String
+  email     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  escola Escola @relation(fields: [escolaId], references: [id], onDelete: Cascade)
+
+  @@index([escolaId])
+  @@map("turmas")
+}
+
+// ============================================================================
 // ÍNDICES ADICIONAIS PARA PERFORMANCE
 // ============================================================================
 

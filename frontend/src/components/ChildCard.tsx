@@ -76,6 +76,17 @@ const BookProgressIndicator = ({ book }: { book: Child['currentBooks'][0] }) => 
     const progress = book.progress || 0;
     const lastReadText = book.daysReading === 0 ? 'Hoje' : book.daysReading === 1 ? 'Ontem' : `Há ${book.daysReading} dias`;
 
+    // Livro "quero ler": ainda não foi começado, não mostrar progresso de leitura.
+    if (book.status === 'to-read') {
+        return (
+            <div className="mt-1.5">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                    📋 Ainda por começar
+                </span>
+            </div>
+        );
+    }
+
     if (book.type === 'page-progress') {
         return (
             <div className="mt-1.5">
@@ -152,6 +163,62 @@ const CurrentBookMini = ({ book }: { book: Child['currentBooks'][0] }) => {
     );
 };
 
+const BOOKS_PREVIEW = 1;
+
+const BooksSection = ({
+    icon,
+    title,
+    books,
+    showAll,
+    onToggleShowAll,
+    emptyLabel,
+}: {
+    icon: string;
+    title: string;
+    books: Child['currentBooks'];
+    showAll: boolean;
+    onToggleShowAll: () => void;
+    emptyLabel?: string;
+}) => {
+    const hasBooks = books && books.length > 0;
+    const displayed = showAll ? books : books?.slice(0, BOOKS_PREVIEW);
+
+    return (
+        <div className="px-5 py-4 border-b" style={{ borderColor: COLORS.border }}>
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                    <span className="text-lg">{icon}</span>
+                    <span className="font-bold text-sm" style={{ color: COLORS.text }}>
+                        {title} ({books?.length || 0})
+                    </span>
+                </div>
+            </div>
+
+            {hasBooks ? (
+                <div className="space-y-2">
+                    {displayed.map((book) => (
+                        <CurrentBookMini key={book.id} book={book} />
+                    ))}
+
+                    {books.length > BOOKS_PREVIEW && (
+                        <button
+                            onClick={onToggleShowAll}
+                            className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                            {showAll ? 'Ver menos' : `Ver mais ${books.length - BOOKS_PREVIEW} livros...`}
+                        </button>
+                    )}
+                </div>
+            ) : emptyLabel ? (
+                <div className="text-center py-6 bg-gray-50 rounded-xl">
+                    <span className="text-3xl mb-2 block">📚</span>
+                    <p className="text-gray-500 text-sm mb-3">{emptyLabel}</p>
+                </div>
+            ) : null}
+        </div>
+    );
+};
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -163,7 +230,8 @@ export interface ChildCardProps {
 }
 
 export function ChildCard({ child, onAddBook, onLogReading }: ChildCardProps) {
-    const [showAllBooks, setShowAllBooks] = useState(false);
+    const [showAllReading, setShowAllReading] = useState(false);
+    const [showAllToRead, setShowAllToRead] = useState(false);
 
     const levelCategory = (child.levelCategory || 'EXPLORERS') as LevelCategory;
     const theme = THEME_CONFIG[levelCategory];
@@ -173,10 +241,9 @@ export function ChildCard({ child, onAddBook, onLogReading }: ChildCardProps) {
         100
     );
 
-    const bookSlice = 1;
     const goalComplete = child.todayReading.minutes >= child.todayReading.goal;
-    const hasCurrentBooks = child.currentBooks && child.currentBooks.length > 0;
-    const displayedBooks = showAllBooks ? child.currentBooks : child.currentBooks?.slice(0, bookSlice);
+    const readingBooks = child.currentBooks?.filter((b) => b.status === 'reading') ?? [];
+    const toReadBooks = child.currentBooks?.filter((b) => b.status === 'to-read') ?? [];
 
     return (
         <div
@@ -318,49 +385,29 @@ export function ChildCard({ child, onAddBook, onLogReading }: ChildCardProps) {
             </div>
 
             {/* ================================================================== */}
-            {/* LIVROS EM PROGRESSO */}
+            {/* A LER */}
             {/* ================================================================== */}
-            <div className="px-5 py-4 border-b" style={{ borderColor: COLORS.border }}>
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                        <span className="text-lg">📖</span>
-                        <span className="font-bold text-sm" style={{ color: COLORS.text }}>
-                            A Ler ({child.currentBooks?.length || 0})
-                        </span>
-                    </div>
-                </div>
+            <BooksSection
+                icon="📖"
+                title="A Ler"
+                books={readingBooks}
+                showAll={showAllReading}
+                onToggleShowAll={() => setShowAllReading((v) => !v)}
+                emptyLabel="Nenhum livro em progresso"
+            />
 
-                {hasCurrentBooks ? (
-                    <div className="space-y-2">
-                        {displayedBooks.map((book) => (
-                            <CurrentBookMini key={book.id} book={book} />
-                        ))}
-
-                        {child.currentBooks.length > bookSlice && !showAllBooks && (
-                            <button
-                                onClick={() => setShowAllBooks(true)}
-                                className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
-                            >
-                                Ver mais {child.currentBooks.length - 1} livros...
-                            </button>
-                        )}
-
-                        {showAllBooks && child.currentBooks.length > bookSlice && (
-                            <button
-                                onClick={() => setShowAllBooks(false)}
-                                className="w-full py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
-                            >
-                                Ver menos
-                            </button>
-                        )}
-                    </div>
-                ) : (
-                    <div className="text-center py-6 bg-gray-50 rounded-xl">
-                        <span className="text-3xl mb-2 block">📚</span>
-                        <p className="text-gray-500 text-sm mb-3">Nenhum livro em progresso</p>
-                    </div>
-                )}
-            </div>
+            {/* ================================================================== */}
+            {/* QUERO LER */}
+            {/* ================================================================== */}
+            {toReadBooks.length > 0 && (
+                <BooksSection
+                    icon="📋"
+                    title="Quero Ler"
+                    books={toReadBooks}
+                    showAll={showAllToRead}
+                    onToggleShowAll={() => setShowAllToRead((v) => !v)}
+                />
+            )}
 
             {/* ================================================================== */}
             {/* ÚLTIMO LIVRO TERMINADO */}
